@@ -11,6 +11,7 @@ use crate::sys::compat;
 use crate::sys::cvt;
 use crate::sys::handle::Handle;
 use crate::sys::windows::api;
+use crate::sys::windows::api::get_last_error;
 use core::str::utf8_char_width;
 
 #[cfg(test)]
@@ -397,18 +398,36 @@ fn utf16_to_utf8(utf16: &[u16], utf8: &mut [u8]) -> io::Result<usize> {
         return Ok(0);
     }
 
-    let result = unsafe {
+    let is_nt = compat::is_windows_nt();
+
+    let mut result = unsafe {
         c::WideCharToMultiByte(
-            c::CP_UTF8,              // CodePage
-            c::WC_ERR_INVALID_CHARS, // dwFlags
-            utf16.as_ptr(),          // lpWideCharStr
-            utf16.len() as c::c_int, // cchWideChar
-            utf8.as_mut_ptr(),       // lpMultiByteStr
-            utf8.len() as c::c_int,  // cbMultiByte
-            ptr::null(),             // lpDefaultChar
-            ptr::null_mut(),         // lpUsedDefaultChar
+            c::CP_UTF8,                                      // CodePage
+            if is_nt { c::WC_ERR_INVALID_CHARS } else { 0 }, // dwFlags
+            utf16.as_ptr(),                                  // lpWideCharStr
+            utf16.len() as c::c_int,                         // cchWideChar
+            utf8.as_mut_ptr(),                               // lpMultiByteStr
+            utf8.len() as c::c_int,                          // cbMultiByte
+            ptr::null(),                                     // lpDefaultChar
+            ptr::null_mut(),                                 // lpUsedDefaultChar
         )
     };
+
+    if result == 0 && get_last_error().code == c::ERROR_INVALID_FLAGS && is_nt {
+        result = unsafe {
+            c::WideCharToMultiByte(
+                c::CP_UTF8,              // CodePage
+                0,                       // dwFlags (0 for pre-Vista compatibility)
+                utf16.as_ptr(),          // lpWideCharStr
+                utf16.len() as c::c_int, // cchWideChar
+                utf8.as_mut_ptr(),       // lpMultiByteStr
+                utf8.len() as c::c_int,  // cbMultiByte
+                ptr::null(),             // lpDefaultChar
+                ptr::null_mut(),         // lpUsedDefaultChar
+            )
+        };
+    }
+
     if result == 0 {
         // We can't really do any better than forget all data and return an error.
         Err(io::const_io_error!(
