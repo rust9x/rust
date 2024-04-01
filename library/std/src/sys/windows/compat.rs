@@ -25,7 +25,7 @@ use crate::sync::atomic::Ordering;
 use crate::sys::c;
 
 mod version;
-pub use version::{is_windows_nt, supports_async_io};
+pub use version::*;
 
 // This uses a static initializer to preload some imported functions.
 // The CRT (C runtime) executes static initializers before `main`

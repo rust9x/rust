@@ -1,4 +1,4 @@
-use crate::sys::c;
+use crate::sys::{c, compat};
 
 #[derive(Debug, PartialEq)]
 pub enum MutexKind {
@@ -15,7 +15,9 @@ pub static mut MUTEX_KIND: MutexKind = MutexKind::SrwLock;
 pub fn init() {
     let kind = if c::TryAcquireSRWLockExclusive::option().is_some() {
         MutexKind::SrwLock
-    } else if c::TryEnterCriticalSection::option().is_some() {
+    } else if compat::supports_try_enter_critical_section()
+        && c::TryEnterCriticalSection::option().is_some()
+    {
         MutexKind::CriticalSection
     } else {
         MutexKind::Legacy
