@@ -17,13 +17,20 @@ target = [
 
 docs = false
 
-[rust]
-# This greatly increases the speed of rebuilds, especially when there are only minor changes. However, it makes the initial build slightly slower.
-# incremental = true
-# Make the compiler and standard library faster to build, at the expense of a ~20% runtime slowdown.
-# lto = "off"
+extended = true
+tools = [
+    #    "cargo",
+    #    "clippy",
+    "rustdoc",
+    #    "rustfmt",
+    #    "rust-analyzer",
+    #    "analysis",
+    "src",
+    #    "rust-demangler",  # if profiler = true
+]
 
-dist-src = false
+[rust]
+dist-src = true
 
 [dist]
 src-tarball = false
