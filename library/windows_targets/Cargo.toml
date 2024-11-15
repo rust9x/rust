@@ -8,3 +8,8 @@ edition = "2021"
 # Enable using raw-dylib for Windows imports.
 # This will eventually be the default.
 windows_raw_dylib = []
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = [
+    'cfg(target_vendor, values("rust9x"))',
+] }
