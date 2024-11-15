@@ -37,7 +37,7 @@ use crate::sys::c;
 // file an issue for discussion; currently we don't guarantee any functionality
 // before main.
 // See https://docs.microsoft.com/en-us/cpp/c-runtime-library/crt-initialization?view=msvc-170
-#[cfg(target_vendor = "win7")]
+#[cfg(any(target_vendor = "win7", target_vendor = "rust9x"))]
 #[used]
 #[link_section = ".CRT$XCT"]
 static INIT_TABLE_ENTRY: unsafe extern "C" fn() = init;
@@ -66,6 +66,21 @@ unsafe extern "C" fn init() {
 
     // Attempt to preload the synch functions.
     load_synch_functions();
+}
+
+#[cfg(target_vendor = "rust9x")]
+unsafe extern "C" fn init() {
+    // In an exe this code is executed before main() so is single threaded.
+    // In a DLL the system's loader lock will be held thereby synchronizing
+    // access. So the same best practices apply here as they do to running in DllMain:
+    // https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-best-practices
+    //
+    // DO NOT do anything interesting or complicated in this function! DO NOT call
+    // any Rust functions or CRT functions if those functions touch any global state,
+    // because this function runs during global initialization. For example, DO NOT
+    // do any dynamic allocation, don't call LoadLibrary, etc.
+
+    checks::init_rust9x_checks();
 }
 
 /// Helper macro for creating CStrs from literals and symbol names.
@@ -118,6 +133,15 @@ impl Module {
         }
     }
 
+    #[allow(dead_code)]
+    pub unsafe fn load(name: &CStr) -> Option<Self> {
+        // SAFETY: A CStr is always null terminated.
+        unsafe {
+            let module = c::LoadLibraryA(name.as_ptr().cast::<u8>());
+            NonNull::new(module).map(Self)
+        }
+    }
+
     // Try to get the address of a function.
     pub fn proc_address(self, name: &CStr) -> Option<NonNull<c_void>> {
         unsafe {
@@ -131,43 +155,54 @@ impl Module {
     }
 }
 
+pub static UNICOWS: &CStr = c"unicows";
+
 /// Load a function or use a fallback implementation if that fails.
 macro_rules! compat_fn_with_fallback {
-    (pub static $module:ident: &CStr = $name:expr; $(
-        $(#[$meta:meta])*
-        $vis:vis fn $symbol:ident($($argname:ident: $argtype:ty),*) -> $rettype:ty $fallback_body:block
-    )*) => (
-        pub static $module: &CStr = $name;
+    {
+        pub static $module:ident: &CStr = $name:expr => { load: $load:expr, unicows: $unicows:expr };
+        $(
+            $(#[$meta:meta])*
+            $vis:vis fn $symbol:ident($($argname:ident: $argtype:ty),* $(,)?) $(-> $rettype:ty)? $fallback_body:block
+        )*
+    } => {
     $(
         $(#[$meta])*
         pub mod $symbol {
             #[allow(unused_imports)]
             use super::*;
             use crate::mem;
-            use crate::ffi::CStr;
+            use crate::ffi::{CStr, c_void};
             use crate::sync::atomic::{AtomicPtr, Ordering};
-            use crate::sys::compat::Module;
 
-            type F = unsafe extern "system" fn($($argtype),*) -> $rettype;
+            type F = unsafe extern "system" fn($($argtype),*) $(-> $rettype)?;
 
             /// `PTR` contains a function pointer to one of three functions.
             /// It starts with the `load` function.
             /// When that is called it attempts to load the requested symbol.
             /// If it succeeds, `PTR` is set to the address of that symbol.
             /// If it fails, then `PTR` is set to `fallback`.
-            static PTR: AtomicPtr<c_void> = AtomicPtr::new(load as *mut _);
+            pub(in crate::sys) static PTR: AtomicPtr<c_void> = AtomicPtr::new(load as *mut _);
 
-            unsafe extern "system" fn load($($argname: $argtype),*) -> $rettype {
+            unsafe extern "system" fn load($($argname: $argtype),*) $(-> $rettype)? {
                 unsafe {
-                    let func = load_from_module(Module::new($module));
+                    let func = load_from_module();
                     func($($argname),*)
                 }
             }
 
-            fn load_from_module(module: Option<Module>) -> F {
+            fn load_from_module() -> F {
                 unsafe {
                     static SYMBOL_NAME: &CStr = ansi_str!(sym $symbol);
-                    if let Some(f) = module.and_then(|m| m.proc_address(SYMBOL_NAME)) {
+
+                    let f = crate::sys::compat::load_from_module(
+                        $name,
+                        SYMBOL_NAME,
+                        $load,
+                        $unicows
+                    );
+
+                    if let Some(f) = f {
                         PTR.store(f.as_ptr(), Ordering::Relaxed);
                         mem::transmute(f)
                     } else {
@@ -177,13 +212,27 @@ macro_rules! compat_fn_with_fallback {
                 }
             }
 
+            #[allow(dead_code)]
+            pub fn available() -> Option<F> {
+                let mut ptr = PTR.load(Ordering::Relaxed);
+                if ptr == load as *mut _ {
+                    ptr = load_from_module() as *mut _;
+                }
+
+                if ptr != fallback as *mut _ {
+                    Some(unsafe { mem::transmute(ptr) })
+                } else {
+                    None
+                }
+            }
+
             #[allow(unused_variables)]
-            unsafe extern "system" fn fallback($($argname: $argtype),*) -> $rettype {
+            unsafe extern "system" fn fallback($($argname: $argtype),*) $(-> $rettype)? {
                 $fallback_body
             }
 
             #[inline(always)]
-            pub unsafe fn call($($argname: $argtype),*) -> $rettype {
+            pub unsafe fn call($($argname: $argtype),*) $(-> $rettype)? {
                 unsafe {
                     let func: F = mem::transmute(PTR.load(Ordering::Relaxed));
                     func($($argname),*)
@@ -193,7 +242,8 @@ macro_rules! compat_fn_with_fallback {
         #[allow(unused)]
         $(#[$meta])*
         $vis use $symbol::call as $symbol;
-    )*)
+    )*
+    }
 }
 
 /// Optionally loaded functions.
@@ -203,7 +253,7 @@ macro_rules! compat_fn_with_fallback {
 macro_rules! compat_fn_optional {
     ($(
         $(#[$meta:meta])*
-        $vis:vis fn $symbol:ident($($argname:ident: $argtype:ty),*) $(-> $rettype:ty)?;
+        $vis:vis fn $symbol:ident($($argname:ident: $argtype:ty),* $(,)?) $(-> $rettype:ty)?;
     )+) => (
         $(
             pub mod $symbol {
@@ -219,8 +269,19 @@ macro_rules! compat_fn_optional {
                 type F = unsafe extern "system" fn($($argtype),*) $(-> $rettype)?;
 
                 #[inline(always)]
+                #[allow(dead_code)]
                 pub fn option() -> Option<F> {
-                    NonNull::new(PTR.load(Ordering::Relaxed)).map(|f| unsafe { mem::transmute(f) })
+                    unsafe {
+                        NonNull::new(PTR.load(Ordering::Relaxed)).map(|f| unsafe { mem::transmute(f) })
+                    }
+                }
+
+                #[inline(always)]
+                #[allow(dead_code)]
+                pub unsafe fn call($($argname: $argtype),*) $(-> $rettype)? {
+                    unsafe {
+                        (mem::transmute::<_, F>(PTR.load(Ordering::Relaxed)))($($argname),*)
+                    }
                 }
             }
             #[inline]
@@ -229,6 +290,28 @@ macro_rules! compat_fn_optional {
             }
         )+
     )
+}
+
+pub(crate) fn load_from_module(
+    module_name: &CStr,
+    symbol_name: &CStr,
+    load: bool,
+    unicows: bool,
+) -> Option<NonNull<c_void>> {
+    let in_unicows = if unicows {
+        unsafe { Module::new(UNICOWS).and_then(|m| m.proc_address(symbol_name)) }
+    } else {
+        None
+    };
+
+    in_unicows.or_else(|| {
+        if load {
+            unsafe { Module::new(module_name) }
+        } else {
+            unsafe { Module::load(module_name) }
+        }
+        .and_then(|m| m.proc_address(symbol_name))
+    })
 }
 
 /// Load all needed functions from "api-ms-win-core-synch-l1-2-0".
@@ -250,6 +333,4 @@ pub(super) fn load_synch_functions() {
         c::WakeByAddressSingle::PTR.store(wake_by_address_single.as_ptr(), Ordering::Relaxed);
         Some(())
     }
-
-    try_load();
 }
