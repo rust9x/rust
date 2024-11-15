@@ -42,6 +42,9 @@ const STAGE0_MISSING_TARGETS: &[&str] = &[
     // just a dummy comment so the list doesn't get onelined
     "riscv64gc-unknown-redox",
     "hexagon-unknown-qurt",
+    "i586-rust9x-windows-msvc",
+    "i686-rust9x-windows-msvc",
+    "x86_64-rust9x-windows-msvc",
 ];
 
 /// Minimum version threshold for libstdc++ required when using prebuilt LLVM
