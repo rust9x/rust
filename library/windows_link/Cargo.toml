@@ -13,3 +13,8 @@ doc = false
 # Enable using raw-dylib for Windows imports.
 # This will eventually be the default.
 windows_raw_dylib = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(target_family, values("rust9x"))',
+] }
