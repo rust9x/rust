@@ -2188,6 +2188,7 @@ GetSystemTimeAsFileTime
 GetSystemTimePreciseAsFileTime
 GetTempPathW
 GetUserProfileDirectoryW
+GetVersion
 GetWindowsDirectoryW
 HANDLE
 HANDLE_FLAG_INHERIT
@@ -2262,6 +2263,7 @@ IPV6_V6ONLY
 IsThreadAFiber
 LINGER
 listen
+LoadLibraryA
 LocalFree
 LOCKFILE_EXCLUSIVE_LOCK
 LOCKFILE_FAIL_IMMEDIATELY
