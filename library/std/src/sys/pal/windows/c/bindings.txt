@@ -2473,6 +2473,7 @@ Windows.Win32.System.LibraryLoader.GetModuleFileNameW
 Windows.Win32.System.LibraryLoader.GetModuleHandleA
 Windows.Win32.System.LibraryLoader.GetModuleHandleW
 Windows.Win32.System.LibraryLoader.GetProcAddress
+Windows.Win32.System.LibraryLoader.LoadLibraryA
 Windows.Win32.System.Performance.QueryPerformanceCounter
 Windows.Win32.System.Performance.QueryPerformanceFrequency
 Windows.Win32.System.Pipes.CreateNamedPipeW
