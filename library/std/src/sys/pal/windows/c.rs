@@ -5,7 +5,7 @@
 #![unstable(issue = "none", feature = "windows_c")]
 #![allow(clippy::style)]
 
-use core::ffi::{CStr, c_int, c_uint, c_ulong, c_ushort, c_void};
+use core::ffi::{c_int, c_uint, c_ulong, c_ushort, c_void};
 use core::ptr;
 
 mod windows_sys;
@@ -129,7 +129,7 @@ windows_link::link!("ntdll.dll" "system" fn NtCreateNamedPipeFile(
 // Functions that aren't available on every version of Windows that we support,
 // but we still use them and just provide some form of a fallback implementation.
 compat_fn_with_fallback! {
-    pub static KERNEL32: &CStr = c"kernel32";
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
 
     // >= Win10 1607
     // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreaddescription
@@ -196,7 +196,7 @@ compat_fn_optional! {
 
 #[cfg(any(target_vendor = "win7"))]
 compat_fn_with_fallback! {
-    pub static NTDLL: &CStr = c"ntdll";
+    pub static NTDLL: &CStr = c"ntdll" => { load: false, unicows: false };
 
     #[cfg(target_vendor = "win7")]
     pub fn NtCreateKeyedEvent(
