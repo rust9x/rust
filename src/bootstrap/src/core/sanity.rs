@@ -41,6 +41,9 @@ const STAGE0_MISSING_TARGETS: &[&str] = &[
     "aarch64-unknown-linux-pauthtest", // Stage 0 compiler is not guaranteed to see the target yet.
     "aarch64-unknown-qnx",
     "x86_64-pc-qnx",
+    "i586-rust9x-windows-msvc",
+    "i686-rust9x-windows-msvc",
+    "x86_64-rust9x-windows-msvc",
 ];
 
 /// Minimum version threshold for libstdc++ required when using prebuilt LLVM
