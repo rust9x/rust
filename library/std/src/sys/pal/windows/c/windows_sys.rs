@@ -60,6 +60,7 @@ windows_targets::link!("kernel32.dll" "system" fn GetSystemInfo(lpsysteminfo : *
 windows_targets::link!("kernel32.dll" "system" fn GetSystemTimeAsFileTime(lpsystemtimeasfiletime : *mut FILETIME));
 windows_targets::link!("kernel32.dll" "system" fn GetSystemTimePreciseAsFileTime(lpsystemtimeasfiletime : *mut FILETIME));
 windows_targets::link!("kernel32.dll" "system" fn GetTempPathW(nbufferlength : u32, lpbuffer : PWSTR) -> u32);
+windows_targets::link!("kernel32.dll" "system" fn GetVersion() -> u32);
 windows_targets::link!("kernel32.dll" "system" fn GetWindowsDirectoryW(lpbuffer : PWSTR, usize : u32) -> u32);
 windows_targets::link!("kernel32.dll" "system" fn InitOnceBeginInitialize(lpinitonce : *mut INIT_ONCE, dwflags : u32, fpending : *mut BOOL, lpcontext : *mut *mut core::ffi::c_void) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn InitOnceComplete(lpinitonce : *mut INIT_ONCE, dwflags : u32, lpcontext : *const core::ffi::c_void) -> BOOL);
