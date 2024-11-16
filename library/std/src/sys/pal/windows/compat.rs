@@ -23,6 +23,9 @@ use crate::ffi::{CStr, c_void};
 use crate::ptr::NonNull;
 use crate::sys::c;
 
+#[cfg(target_vendor = "rust9x")]
+pub(crate) mod checks;
+
 // This uses a static initializer to preload some imported functions.
 // The CRT (C runtime) executes static initializers before `main`
 // is called (for binaries) and before `DllMain` is called (for DLLs).
