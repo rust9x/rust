@@ -1,6 +1,6 @@
 cfg_select! {
     any(
-        all(target_os = "windows", not(target_vendor = "win7")),
+        all(target_os = "windows", not(any(target_vendor = "win7", target_family = "rust9x"))),
         target_os = "linux",
         target_os = "android",
         all(target_family = "wasm", target_feature = "atomics"),
@@ -26,6 +26,13 @@ cfg_select! {
     target_vendor = "win7" => {
         mod windows7;
         pub use windows7::Parker;
+    }
+    target_family = "rust9x" => {
+        mod futex;
+        mod windowsxp;
+        mod generic;
+        mod rust9x;
+        pub use rust9x::Parker;
     }
     all(target_vendor = "apple", not(miri)) => {
         // Doesn't work in Miri, see <https://github.com/rust-lang/miri/issues/2589>.
