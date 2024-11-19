@@ -26,6 +26,9 @@ use crate::sys::c;
 #[cfg(target_vendor = "rust9x")]
 pub(crate) mod checks;
 
+#[cfg(target_vendor = "rust9x")]
+pub(crate) mod thread_parking;
+
 // This uses a static initializer to preload some imported functions.
 // The CRT (C runtime) executes static initializers before `main`
 // is called (for binaries) and before `DllMain` is called (for DLLs).
