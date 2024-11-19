@@ -5,7 +5,9 @@
 #![unstable(issue = "none", feature = "windows_c")]
 #![allow(clippy::style)]
 
-use core::ffi::{c_uint, c_ulong, c_ushort, c_void};
+#[allow(unused_imports)]
+use core::ffi::c_void;
+use core::ffi::{c_uint, c_ulong, c_ushort};
 use core::{mem, ptr};
 
 mod windows_sys;
@@ -150,7 +152,7 @@ compat_fn_with_fallback! {
     }
 }
 
-#[cfg(not(target_vendor = "win7"))]
+#[cfg(not(any(target_vendor = "win7", target_vendor = "rust9x")))]
 // Use raw-dylib to import synchronization functions to workaround issues with the older mingw import library.
 #[cfg_attr(
     target_arch = "x86",
@@ -187,11 +189,31 @@ compat_fn_optional! {
     pub fn WakeByAddressSingle(address: *const c_void);
 }
 
-#[cfg(any(target_vendor = "win7", target_vendor = "uwp"))]
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static SYNCH: &CStr = c"api-ms-win-core-synch-l1-2-0" => { load: true, unicows: false };
+
+    pub fn WaitOnAddress(
+        address: *const c_void,
+        compareaddress: *const c_void,
+        addresssize: usize,
+        dwmilliseconds: u32
+    ) -> BOOL {
+        rtabort!("unimplemented")
+    }
+    pub fn WakeByAddressSingle(address: *const c_void) {
+        rtabort!("unimplemented")
+    }
+    pub fn WakeByAddressAll(address: *const c_void) {
+        rtabort!("unimplemented")
+    }
+}
+
+#[cfg(any(target_vendor = "win7", target_vendor = "rust9x", target_vendor = "uwp"))]
 compat_fn_with_fallback! {
     pub static NTDLL: &CStr = c"ntdll" => { load: true, unicows: false };
 
-    #[cfg(target_vendor = "win7")]
+    #[cfg(any(target_vendor = "win7", target_vendor = "rust9x"))]
     pub fn NtCreateKeyedEvent(
         KeyedEventHandle: *mut HANDLE,
         DesiredAccess: u32,
@@ -200,7 +222,7 @@ compat_fn_with_fallback! {
     ) -> NTSTATUS {
         panic!("keyed events not available")
     }
-    #[cfg(target_vendor = "win7")]
+    #[cfg(any(target_vendor = "win7", target_vendor = "rust9x"))]
     pub fn NtReleaseKeyedEvent(
         EventHandle: HANDLE,
         Key: *const c_void,
@@ -209,7 +231,7 @@ compat_fn_with_fallback! {
     ) -> NTSTATUS {
         panic!("keyed events not available")
     }
-    #[cfg(target_vendor = "win7")]
+    #[cfg(any(target_vendor = "win7", target_vendor = "rust9x"))]
     pub fn NtWaitForKeyedEvent(
         EventHandle: HANDLE,
         Key: *const c_void,
