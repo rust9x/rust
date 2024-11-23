@@ -31,6 +31,10 @@ pub unsafe fn raw(m: &Mutex) -> *mut c::SRWLOCK {
 
 impl Mutex {
     #[inline]
+    #[cfg_attr(
+        target_vendor = "rust9x",
+        allow(dead_code, reason = "initialized via rust9x::Mutex::new")
+    )]
     pub const fn new() -> Mutex {
         Mutex { srwlock: UnsafeCell::new(c::SRWLOCK_INIT) }
     }

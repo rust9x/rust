@@ -1,6 +1,6 @@
 cfg_if::cfg_if! {
     if #[cfg(any(
-        all(target_os = "windows", not(target_vendor="win7")),
+        all(target_os = "windows", not(any(target_vendor="win7", target_vendor = "rust9x"))),
         target_os = "linux",
         target_os = "android",
         target_os = "freebsd",
@@ -21,6 +21,10 @@ cfg_if::cfg_if! {
     } else if #[cfg(all(target_os = "windows", target_vendor = "win7"))] {
         mod windows7;
         pub use windows7::Condvar;
+    } else if #[cfg(all(target_os = "windows", target_vendor = "rust9x"))] {
+        mod windows7;
+        mod rust9x;
+        pub use rust9x::Condvar;
     } else if #[cfg(all(target_vendor = "fortanix", target_env = "sgx"))] {
         mod sgx;
         pub use sgx::Condvar;
