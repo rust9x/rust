@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use core::ffi::c_void;
 use core::sync::atomic::{
     AtomicBool, AtomicI8, AtomicI16, AtomicI32, AtomicI64, AtomicIsize, AtomicPtr, AtomicU8,

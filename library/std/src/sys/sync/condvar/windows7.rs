@@ -12,6 +12,10 @@ unsafe impl Sync for Condvar {}
 
 impl Condvar {
     #[inline]
+    #[cfg_attr(
+        target_vendor = "rust9x",
+        allow(dead_code, reason = "initialized via rust9x::Mutex::new")
+    )]
     pub const fn new() -> Condvar {
         Condvar { inner: UnsafeCell::new(c::CONDITION_VARIABLE_INIT) }
     }
