@@ -31,6 +31,10 @@ pub unsafe fn raw(m: &Mutex) -> *mut c::SRWLOCK {
 
 impl Mutex {
     #[inline]
+    #[cfg_attr(
+        target_family = "rust9x",
+        allow(dead_code, reason = "initialized via rust9x::Mutex::new")
+    )]
     pub const fn new() -> Mutex {
         Mutex { srwlock: UnsafeCell::new(c::SRWLOCK_INIT) }
     }
@@ -44,7 +48,13 @@ impl Mutex {
 
     #[inline]
     pub fn try_lock(&self) -> bool {
-        unsafe { c::TryAcquireSRWLockExclusive(raw(self)) }
+        use crate::sync::atomic::{AtomicUsize, Ordering};
+
+        // This is what `TryAcquireSRWLockExclusive` does: atomically set the low bit of the lock
+        // word, acquiring the lock iff that bit was previously clear. We do it inline rather than
+        // calling the API because the latter only exists on Windows 7+.
+        let lock = unsafe { AtomicUsize::from_ptr(raw(self).cast::<usize>()) };
+        lock.fetch_or(1, Ordering::Acquire) & 1 == 0
     }
 
     #[inline]

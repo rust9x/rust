@@ -1,3 +1,4 @@
+#![cfg_attr(target_family = "rust9x", allow(dead_code))]
 use core::ffi::c_void;
 use core::ptr;
 use core::sync::atomic::{
