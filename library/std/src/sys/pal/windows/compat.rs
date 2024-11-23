@@ -29,6 +29,12 @@ pub(crate) mod checks;
 #[cfg(target_family = "rust9x")]
 pub(crate) mod thread_parking;
 
+#[cfg(all(target_family = "rust9x", target_arch = "x86"))]
+pub(crate) mod try_critical_section_9x;
+
+#[cfg(all(target_family = "rust9x", target_arch = "x86"))]
+pub(crate) mod try_critical_section_nt3;
+
 // This uses a static initializer to preload some imported functions.
 // The CRT (C runtime) executes static initializers before `main`
 // is called (for binaries) and before `DllMain` is called (for DLLs).
