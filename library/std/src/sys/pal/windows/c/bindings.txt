@@ -50,21 +50,25 @@ CREATE_UNICODE_ENVIRONMENT
 CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
 CREATE_WAITABLE_TIMER_MANUAL_RESET
 CreateDirectoryW
+CreateEventA
 CreateEventW
 CreateFileW
 CreateHardLinkW
+CreateMutexA
 CreateNamedPipeW
 CreatePipe
 CreateProcessW
 CreateSymbolicLinkW
 CreateThread
 CreateWaitableTimerExW
+CRITICAL_SECTION
 CSTR_EQUAL
 CSTR_GREATER_THAN
 CSTR_LESS_THAN
 DEBUG_ONLY_THIS_PROCESS
 DEBUG_PROCESS
 DELETE
+DeleteCriticalSection
 DeleteFileW
 DeleteProcThreadAttributeList
 DETACHED_PROCESS
@@ -267,6 +271,7 @@ ENABLE_VIRTUAL_TERMINAL_INPUT
 ENABLE_VIRTUAL_TERMINAL_PROCESSING
 ENABLE_WINDOW_INPUT
 ENABLE_WRAP_AT_EOL_OUTPUT
+EnterCriticalSection
 ERROR_ABANDON_HIBERFILE
 ERROR_ABANDONED_WAIT_0
 ERROR_ABANDONED_WAIT_63
@@ -2203,6 +2208,7 @@ INHERIT_CALLER_PRIORITY
 INHERIT_PARENT_AFFINITY
 INIT_ONCE
 INIT_ONCE_INIT_FAILED
+InitializeCriticalSection
 InitializeProcThreadAttributeList
 InitOnceBeginInitialize
 InitOnceComplete
@@ -2261,6 +2267,7 @@ IPV6_MREQ
 IPV6_MULTICAST_LOOP
 IPV6_V6ONLY
 IsThreadAFiber
+LeaveCriticalSection
 LINGER
 listen
 LoadLibraryA
@@ -2347,9 +2354,11 @@ ReadFileEx
 REALTIME_PRIORITY_CLASS
 recv
 recvfrom
+ReleaseMutex
 ReleaseSRWLockExclusive
 ReleaseSRWLockShared
 RemoveDirectoryW
+ResetEvent
 RtlGenRandom
 RtlNtStatusToDosError
 SD_BOTH
@@ -2369,6 +2378,7 @@ send
 sendto
 SetCurrentDirectoryW
 SetEnvironmentVariableW
+SetEvent
 SetFileAttributesW
 SetFileInformationByHandle
 SetFilePointerEx
@@ -2380,6 +2390,7 @@ SetStdHandle
 SetThreadStackGuarantee
 SetWaitableTimer
 shutdown
+SignalObjectAndWait
 Sleep
 SleepConditionVariableSRW
 SleepEx
@@ -2473,6 +2484,7 @@ TRUE
 TRUNCATE_EXISTING
 TryAcquireSRWLockExclusive
 TryAcquireSRWLockShared
+TryEnterCriticalSection
 UNICODE_STRING
 UnlockFile
 UpdateProcThreadAttribute
