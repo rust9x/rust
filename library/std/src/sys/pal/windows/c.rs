@@ -21,9 +21,9 @@ pub const INVALID_HANDLE_VALUE: HANDLE = ::core::ptr::without_provenance_mut(-1i
 pub const EXIT_SUCCESS: u32 = 0;
 pub const EXIT_FAILURE: u32 = 1;
 
-#[cfg(target_vendor = "win7")]
+#[cfg(any(target_vendor = "win7", target_vendor = "rust9x"))]
 pub const CONDITION_VARIABLE_INIT: CONDITION_VARIABLE = CONDITION_VARIABLE { Ptr: ptr::null_mut() };
-#[cfg(target_vendor = "win7")]
+#[cfg(any(target_vendor = "win7", target_vendor = "rust9x"))]
 pub const SRWLOCK_INIT: SRWLOCK = SRWLOCK { Ptr: ptr::null_mut() };
 #[cfg(not(target_thread_local))]
 pub const INIT_ONCE_STATIC_INIT: INIT_ONCE = INIT_ONCE { Ptr: ptr::null_mut() };
@@ -289,5 +289,46 @@ compat_fn_with_fallback! {
     #[cfg(target_vendor = "uwp")]
     pub fn RtlNtStatusToDosError(Status: NTSTATUS) -> u32 {
         Status as u32
+    }
+}
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+
+    // >= NT 4
+    // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-signalobjectandwait
+    pub fn SignalObjectAndWait(
+        hobjecttosignal: HANDLE,
+        hobjecttowaiton: HANDLE,
+        dwmilliseconds: u32,
+        balertable: BOOL
+    ) -> WAIT_EVENT { rtabort!("unimplemented") }
+    // >= NT 4
+    // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-tryentercriticalsection
+    pub fn TryEnterCriticalSection(lpcriticalsection: *mut CRITICAL_SECTION) -> BOOL {
+        rtabort!("unimplemented")
+    }
+    // >= Win7 / Server 2008 R2
+    // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-tryacquiresrwlockexclusive
+    pub fn TryAcquireSRWLockExclusive(srwlock: *mut SRWLOCK) -> BOOLEAN { rtabort!("unimplemented") }
+    pub fn TryAcquireSRWLockShared(srwlock: *mut SRWLOCK) -> BOOLEAN { rtabort!("unimplemented") }
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-acquiresrwlockexclusive
+    pub fn AcquireSRWLockExclusive(srwlock: *mut SRWLOCK) -> () { rtabort!("unimplemented") }
+    pub fn AcquireSRWLockShared(srwlock: *mut SRWLOCK) -> () { rtabort!("unimplemented") }
+    pub fn ReleaseSRWLockExclusive(srwlock: *mut SRWLOCK) -> () { rtabort!("unimplemented") }
+    pub fn ReleaseSRWLockShared(srwlock: *mut SRWLOCK) -> () { rtabort!("unimplemented") }
+    pub fn SleepConditionVariableSRW(
+        conditionvariable: *mut CONDITION_VARIABLE,
+        srwlock: *mut SRWLOCK,
+        dwmilliseconds: u32,
+        flags: u32,
+    ) -> BOOL { rtabort!("unimplemented") }
+    pub fn WakeAllConditionVariable(conditionvariable: *mut CONDITION_VARIABLE) -> () {
+        rtabort!("unimplemented")
+    }
+    pub fn WakeConditionVariable(conditionvariable: *mut CONDITION_VARIABLE) -> () {
+        rtabort!("unimplemented")
     }
 }

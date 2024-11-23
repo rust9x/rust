@@ -11,19 +11,23 @@ windows_targets::link!("kernel32.dll" "system" fn CloseHandle(hobject : HANDLE) 
 windows_targets::link!("kernel32.dll" "system" fn CompareStringOrdinal(lpstring1 : PCWSTR, cchcount1 : i32, lpstring2 : PCWSTR, cchcount2 : i32, bignorecase : BOOL) -> COMPARESTRING_RESULT);
 windows_targets::link!("kernel32.dll" "system" fn CopyFileExW(lpexistingfilename : PCWSTR, lpnewfilename : PCWSTR, lpprogressroutine : LPPROGRESS_ROUTINE, lpdata : *const core::ffi::c_void, pbcancel : *mut BOOL, dwcopyflags : u32) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn CreateDirectoryW(lppathname : PCWSTR, lpsecurityattributes : *const SECURITY_ATTRIBUTES) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn CreateEventA(lpeventattributes : *const SECURITY_ATTRIBUTES, bmanualreset : BOOL, binitialstate : BOOL, lpname : PCSTR) -> HANDLE);
 windows_targets::link!("kernel32.dll" "system" fn CreateEventW(lpeventattributes : *const SECURITY_ATTRIBUTES, bmanualreset : BOOL, binitialstate : BOOL, lpname : PCWSTR) -> HANDLE);
 windows_targets::link!("kernel32.dll" "system" fn CreateFileW(lpfilename : PCWSTR, dwdesiredaccess : u32, dwsharemode : FILE_SHARE_MODE, lpsecurityattributes : *const SECURITY_ATTRIBUTES, dwcreationdisposition : FILE_CREATION_DISPOSITION, dwflagsandattributes : FILE_FLAGS_AND_ATTRIBUTES, htemplatefile : HANDLE) -> HANDLE);
 windows_targets::link!("kernel32.dll" "system" fn CreateHardLinkW(lpfilename : PCWSTR, lpexistingfilename : PCWSTR, lpsecurityattributes : *const SECURITY_ATTRIBUTES) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn CreateMutexA(lpmutexattributes : *const SECURITY_ATTRIBUTES, binitialowner : BOOL, lpname : PCSTR) -> HANDLE);
 windows_targets::link!("kernel32.dll" "system" fn CreateNamedPipeW(lpname : PCWSTR, dwopenmode : FILE_FLAGS_AND_ATTRIBUTES, dwpipemode : NAMED_PIPE_MODE, nmaxinstances : u32, noutbuffersize : u32, ninbuffersize : u32, ndefaulttimeout : u32, lpsecurityattributes : *const SECURITY_ATTRIBUTES) -> HANDLE);
 windows_targets::link!("kernel32.dll" "system" fn CreatePipe(hreadpipe : *mut HANDLE, hwritepipe : *mut HANDLE, lppipeattributes : *const SECURITY_ATTRIBUTES, nsize : u32) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn CreateProcessW(lpapplicationname : PCWSTR, lpcommandline : PWSTR, lpprocessattributes : *const SECURITY_ATTRIBUTES, lpthreadattributes : *const SECURITY_ATTRIBUTES, binherithandles : BOOL, dwcreationflags : PROCESS_CREATION_FLAGS, lpenvironment : *const core::ffi::c_void, lpcurrentdirectory : PCWSTR, lpstartupinfo : *const STARTUPINFOW, lpprocessinformation : *mut PROCESS_INFORMATION) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn CreateSymbolicLinkW(lpsymlinkfilename : PCWSTR, lptargetfilename : PCWSTR, dwflags : SYMBOLIC_LINK_FLAGS) -> BOOLEAN);
 windows_targets::link!("kernel32.dll" "system" fn CreateThread(lpthreadattributes : *const SECURITY_ATTRIBUTES, dwstacksize : usize, lpstartaddress : LPTHREAD_START_ROUTINE, lpparameter : *const core::ffi::c_void, dwcreationflags : THREAD_CREATION_FLAGS, lpthreadid : *mut u32) -> HANDLE);
 windows_targets::link!("kernel32.dll" "system" fn CreateWaitableTimerExW(lptimerattributes : *const SECURITY_ATTRIBUTES, lptimername : PCWSTR, dwflags : u32, dwdesiredaccess : u32) -> HANDLE);
+windows_targets::link!("kernel32.dll" "system" fn DeleteCriticalSection(lpcriticalsection : *mut CRITICAL_SECTION));
 windows_targets::link!("kernel32.dll" "system" fn DeleteFileW(lpfilename : PCWSTR) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn DeleteProcThreadAttributeList(lpattributelist : LPPROC_THREAD_ATTRIBUTE_LIST));
 windows_targets::link!("kernel32.dll" "system" fn DeviceIoControl(hdevice : HANDLE, dwiocontrolcode : u32, lpinbuffer : *const core::ffi::c_void, ninbuffersize : u32, lpoutbuffer : *mut core::ffi::c_void, noutbuffersize : u32, lpbytesreturned : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn DuplicateHandle(hsourceprocesshandle : HANDLE, hsourcehandle : HANDLE, htargetprocesshandle : HANDLE, lptargethandle : *mut HANDLE, dwdesiredaccess : u32, binherithandle : BOOL, dwoptions : DUPLICATE_HANDLE_OPTIONS) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn EnterCriticalSection(lpcriticalsection : *mut CRITICAL_SECTION));
 windows_targets::link!("kernel32.dll" "system" fn ExitProcess(uexitcode : u32) -> !);
 windows_targets::link!("kernel32.dll" "system" fn FindClose(hfindfile : HANDLE) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn FindFirstFileExW(lpfilename : PCWSTR, finfolevelid : FINDEX_INFO_LEVELS, lpfindfiledata : *mut core::ffi::c_void, fsearchop : FINDEX_SEARCH_OPS, lpsearchfilter : *const core::ffi::c_void, dwadditionalflags : FIND_FIRST_EX_FLAGS) -> HANDLE);
@@ -64,7 +68,9 @@ windows_targets::link!("kernel32.dll" "system" fn GetVersion() -> u32);
 windows_targets::link!("kernel32.dll" "system" fn GetWindowsDirectoryW(lpbuffer : PWSTR, usize : u32) -> u32);
 windows_targets::link!("kernel32.dll" "system" fn InitOnceBeginInitialize(lpinitonce : *mut INIT_ONCE, dwflags : u32, fpending : *mut BOOL, lpcontext : *mut *mut core::ffi::c_void) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn InitOnceComplete(lpinitonce : *mut INIT_ONCE, dwflags : u32, lpcontext : *const core::ffi::c_void) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn InitializeCriticalSection(lpcriticalsection : *mut CRITICAL_SECTION));
 windows_targets::link!("kernel32.dll" "system" fn InitializeProcThreadAttributeList(lpattributelist : LPPROC_THREAD_ATTRIBUTE_LIST, dwattributecount : u32, dwflags : u32, lpsize : *mut usize) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn LeaveCriticalSection(lpcriticalsection : *mut CRITICAL_SECTION));
 windows_targets::link!("kernel32.dll" "system" fn LoadLibraryA(lplibfilename : PCSTR) -> HMODULE);
 windows_targets::link!("kernel32.dll" "system" fn LocalFree(hmem : HLOCAL) -> HLOCAL);
 windows_targets::link!("kernel32.dll" "system" fn LockFileEx(hfile : HANDLE, dwflags : LOCK_FILE_FLAGS, dwreserved : u32, nnumberofbytestolocklow : u32, nnumberofbytestolockhigh : u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
@@ -75,11 +81,14 @@ windows_targets::link!("kernel32.dll" "system" fn QueryPerformanceFrequency(lpfr
 windows_targets::link!("kernel32.dll" "system" fn ReadConsoleW(hconsoleinput : HANDLE, lpbuffer : *mut core::ffi::c_void, nnumberofcharstoread : u32, lpnumberofcharsread : *mut u32, pinputcontrol : *const CONSOLE_READCONSOLE_CONTROL) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn ReadFile(hfile : HANDLE, lpbuffer : *mut u8, nnumberofbytestoread : u32, lpnumberofbytesread : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn ReadFileEx(hfile : HANDLE, lpbuffer : *mut u8, nnumberofbytestoread : u32, lpoverlapped : *mut OVERLAPPED, lpcompletionroutine : LPOVERLAPPED_COMPLETION_ROUTINE) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn ReleaseMutex(hmutex : HANDLE) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn ReleaseSRWLockExclusive(srwlock : *mut SRWLOCK));
 windows_targets::link!("kernel32.dll" "system" fn ReleaseSRWLockShared(srwlock : *mut SRWLOCK));
 windows_targets::link!("kernel32.dll" "system" fn RemoveDirectoryW(lppathname : PCWSTR) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn ResetEvent(hevent : HANDLE) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn SetCurrentDirectoryW(lppathname : PCWSTR) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn SetEnvironmentVariableW(lpname : PCWSTR, lpvalue : PCWSTR) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn SetEvent(hevent : HANDLE) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn SetFileAttributesW(lpfilename : PCWSTR, dwfileattributes : FILE_FLAGS_AND_ATTRIBUTES) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn SetFileInformationByHandle(hfile : HANDLE, fileinformationclass : FILE_INFO_BY_HANDLE_CLASS, lpfileinformation : *const core::ffi::c_void, dwbuffersize : u32) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn SetFilePointerEx(hfile : HANDLE, lidistancetomove : i64, lpnewfilepointer : *mut i64, dwmovemethod : SET_FILE_POINTER_MOVE_METHOD) -> BOOL);
@@ -88,6 +97,7 @@ windows_targets::link!("kernel32.dll" "system" fn SetHandleInformation(hobject :
 windows_targets::link!("kernel32.dll" "system" fn SetLastError(dwerrcode : WIN32_ERROR));
 windows_targets::link!("kernel32.dll" "system" fn SetThreadStackGuarantee(stacksizeinbytes : *mut u32) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn SetWaitableTimer(htimer : HANDLE, lpduetime : *const i64, lperiod : i32, pfncompletionroutine : PTIMERAPCROUTINE, lpargtocompletionroutine : *const core::ffi::c_void, fresume : BOOL) -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn SignalObjectAndWait(hobjecttosignal : HANDLE, hobjecttowaiton : HANDLE, dwmilliseconds : u32, balertable : BOOL) -> WAIT_EVENT);
 windows_targets::link!("kernel32.dll" "system" fn Sleep(dwmilliseconds : u32));
 windows_targets::link!("kernel32.dll" "system" fn SleepConditionVariableSRW(conditionvariable : *mut CONDITION_VARIABLE, srwlock : *mut SRWLOCK, dwmilliseconds : u32, flags : u32) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn SleepEx(dwmilliseconds : u32, balertable : BOOL) -> u32);
@@ -99,6 +109,7 @@ windows_targets::link!("kernel32.dll" "system" fn TlsGetValue(dwtlsindex : u32) 
 windows_targets::link!("kernel32.dll" "system" fn TlsSetValue(dwtlsindex : u32, lptlsvalue : *const core::ffi::c_void) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn TryAcquireSRWLockExclusive(srwlock : *mut SRWLOCK) -> BOOLEAN);
 windows_targets::link!("kernel32.dll" "system" fn TryAcquireSRWLockShared(srwlock : *mut SRWLOCK) -> BOOLEAN);
+windows_targets::link!("kernel32.dll" "system" fn TryEnterCriticalSection(lpcriticalsection : *mut CRITICAL_SECTION) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn UnlockFile(hfile : HANDLE, dwfileoffsetlow : u32, dwfileoffsethigh : u32, nnumberofbytestounlocklow : u32, nnumberofbytestounlockhigh : u32) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn UpdateProcThreadAttribute(lpattributelist : LPPROC_THREAD_ATTRIBUTE_LIST, dwflags : u32, attribute : usize, lpvalue : *const core::ffi::c_void, cbsize : usize, lppreviousvalue : *mut core::ffi::c_void, lpreturnsize : *const usize) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn WaitForMultipleObjects(ncount : u32, lphandles : *const HANDLE, bwaitall : BOOL, dwmilliseconds : u32) -> WAIT_EVENT);
@@ -398,6 +409,29 @@ pub const CREATE_SUSPENDED: PROCESS_CREATION_FLAGS = 4u32;
 pub const CREATE_UNICODE_ENVIRONMENT: PROCESS_CREATION_FLAGS = 1024u32;
 pub const CREATE_WAITABLE_TIMER_HIGH_RESOLUTION: u32 = 2u32;
 pub const CREATE_WAITABLE_TIMER_MANUAL_RESET: u32 = 1u32;
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct CRITICAL_SECTION {
+    pub DebugInfo: *mut CRITICAL_SECTION_DEBUG,
+    pub LockCount: i32,
+    pub RecursionCount: i32,
+    pub OwningThread: HANDLE,
+    pub LockSemaphore: HANDLE,
+    pub SpinCount: usize,
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct CRITICAL_SECTION_DEBUG {
+    pub Type: u16,
+    pub CreatorBackTraceIndex: u16,
+    pub CriticalSection: *mut CRITICAL_SECTION,
+    pub ProcessLocksList: LIST_ENTRY,
+    pub EntryCount: u32,
+    pub ContentionCount: u32,
+    pub Flags: u32,
+    pub CreatorBackTraceIndexHigh: u16,
+    pub Identifier: u16,
+}
 pub const CSTR_EQUAL: COMPARESTRING_RESULT = 2i32;
 pub const CSTR_GREATER_THAN: COMPARESTRING_RESULT = 3i32;
 pub const CSTR_LESS_THAN: COMPARESTRING_RESULT = 1i32;
@@ -2734,6 +2768,12 @@ pub struct LINGER {
     pub l_onoff: u16,
     pub l_linger: u16,
 }
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct LIST_ENTRY {
+    pub Flink: *mut LIST_ENTRY,
+    pub Blink: *mut LIST_ENTRY,
+}
 pub const LOCKFILE_EXCLUSIVE_LOCK: LOCK_FILE_FLAGS = 2u32;
 pub const LOCKFILE_FAIL_IMMEDIATELY: LOCK_FILE_FLAGS = 1u32;
 pub type LOCK_FILE_FLAGS = u32;
@@ -3319,6 +3359,7 @@ pub struct XSAVE_FORMAT {
     pub XmmRegisters: [M128A; 8],
     pub Reserved4: [u8; 224],
 }
+
 #[cfg(target_arch = "arm")]
 #[repr(C)]
 pub struct WSADATA {
