@@ -146,7 +146,7 @@ compat_fn_with_fallback! {
 
     // >= Win8 / Server 2012
     // https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimepreciseasfiletime
-    #[cfg(target_vendor = "win7")]
+    #[cfg(any(target_vendor = "win7", target_family = "rust9x"))]
     pub fn GetSystemTimePreciseAsFileTime(lpsystemtimeasfiletime: *mut FILETIME) -> () {
         unsafe { GetSystemTimeAsFileTime(lpsystemtimeasfiletime) }
     }
@@ -320,6 +320,46 @@ compat_fn_with_fallback! {
     // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreadstackguarantee
     pub fn SetThreadStackGuarantee(stacksizeinbytes: *mut u32) -> BOOL {
         TRUE
+    }
+
+    // >= 95 / NT 3.5
+    // https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeasfiletime
+    pub fn GetSystemTimeAsFileTime(lpSystemTimeAsFileTime: *mut FILETIME) {
+        unsafe {
+            // implementation based on old MSDN docs
+            let mut st: SYSTEMTIME = crate::mem::zeroed();
+            GetSystemTime(&mut st);
+            crate::sys::cvt(SystemTimeToFileTime(&st, lpSystemTimeAsFileTime)).unwrap();
+        }
+    }
+    // >= NT 4
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-switchtothread
+    pub fn SwitchToThread() -> BOOL {
+        unsafe { Sleep(0); }
+        TRUE
+    }
+
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw
+    pub fn CreateWaitableTimerExW(
+        lptimerattributes: *const SECURITY_ATTRIBUTES,
+        lptimername: PCWSTR,
+        dwflags: u32,
+        dwdesiredaccess: u32
+    ) -> HANDLE {
+        ptr::null_mut()
+    }
+
+    // >= 98 / NT 4
+    // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-setwaitabletimer
+    pub fn SetWaitableTimer(htimer: HANDLE,
+        lpduetime: *const i64,
+        lperiod: i32,
+        pfncompletionroutine: PTIMERAPCROUTINE,
+        lpargtocompletionroutine: *const core::ffi::c_void,
+        fresume: BOOL
+    ) -> BOOL {
+        rtabort!("unimplemented")
     }
 }
 
