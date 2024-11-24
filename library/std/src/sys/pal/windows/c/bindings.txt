@@ -2189,6 +2189,7 @@ getsockopt
 GetStdHandle
 GetSystemDirectoryW
 GetSystemInfo
+GetSystemTime
 GetSystemTimeAsFileTime
 GetSystemTimePreciseAsFileTime
 GetTempPathW
@@ -2454,6 +2455,7 @@ SYMBOLIC_LINK_FLAG_DIRECTORY
 SYMLINK_FLAG_RELATIVE
 SYNCHRONIZE
 SYSTEM_INFO
+SystemTimeToFileTime
 TCP_NODELAY
 TerminateProcess
 TIMER_ALL_ACCESS
