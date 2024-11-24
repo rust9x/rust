@@ -2351,6 +2351,7 @@ Windows.Win32.Storage.FileSystem.GetFinalPathNameByHandleW
 Windows.Win32.Storage.FileSystem.GetFullPathNameW
 Windows.Win32.Storage.FileSystem.GetTempPathW
 Windows.Win32.Storage.FileSystem.INVALID_FILE_ATTRIBUTES
+Windows.Win32.Storage.FileSystem.INVALID_SET_FILE_POINTER
 Windows.Win32.Storage.FileSystem.LOCKFILE_EXCLUSIVE_LOCK
 Windows.Win32.Storage.FileSystem.LOCKFILE_FAIL_IMMEDIATELY
 Windows.Win32.Storage.FileSystem.LockFileEx
@@ -2384,8 +2385,10 @@ Windows.Win32.Storage.FileSystem.SECURITY_IMPERSONATION
 Windows.Win32.Storage.FileSystem.SECURITY_SQOS_PRESENT
 Windows.Win32.Storage.FileSystem.SECURITY_VALID_SQOS_FLAGS
 Windows.Win32.Storage.FileSystem.SET_FILE_POINTER_MOVE_METHOD
+Windows.Win32.Storage.FileSystem.SetEndOfFile
 Windows.Win32.Storage.FileSystem.SetFileAttributesW
 Windows.Win32.Storage.FileSystem.SetFileInformationByHandle
+Windows.Win32.Storage.FileSystem.SetFilePointer
 Windows.Win32.Storage.FileSystem.SetFilePointerEx
 Windows.Win32.Storage.FileSystem.SetFileTime
 Windows.Win32.Storage.FileSystem.SPECIFIC_RIGHTS_ALL

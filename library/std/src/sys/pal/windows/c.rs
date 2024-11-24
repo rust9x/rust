@@ -391,3 +391,58 @@ compat_fn_with_fallback! {
         FALSE
     }
 }
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= 2000
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfilepointerex
+    pub fn SetFilePointerEx(
+        hfile: HANDLE,
+        lidistancetomove: i64,
+        lpnewfilepointer: *mut i64,
+        dwmovemethod: SET_FILE_POINTER_MOVE_METHOD,
+    ) -> BOOL {
+        unsafe {
+            let distance_low = lidistancetomove as i32;
+            let mut distance_high = (lidistancetomove >> 32) as i32;
+
+            let new_pos_low = SetFilePointer(hfile, distance_low, &mut distance_high, dwmovemethod);
+
+            // since (-1 as u32) could be a valid value for the lower 32 bits of the new file
+            // pointer position, a call to GetLastError is needed to actually see if it failed
+            if new_pos_low == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR {
+                return FALSE;
+            }
+
+            if !lpnewfilepointer.is_null() {
+                *lpnewfilepointer = (distance_high as i64) << 32 | (new_pos_low as i64);
+            }
+
+            TRUE
+        }
+    }
+
+    // >= Vista / Server 2008 (XP / Server 2003 when linking a supported FileExtd.lib)
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle
+    pub fn SetFileInformationByHandle(
+        hfile: HANDLE,
+        fileinformationclass: FILE_INFO_BY_HANDLE_CLASS,
+        lpfileinformation: *const ::core::ffi::c_void,
+        dwbuffersize: u32,
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+    // >= Vista / Server 2008 (XP / Server 2003 when linking a supported FileExtd.lib)
+    // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getfileinformationbyhandleex
+    pub fn GetFileInformationByHandleEx(
+        hfile: HANDLE,
+        fileinformationclass: FILE_INFO_BY_HANDLE_CLASS,
+        lpfileinformation: *mut ::core::ffi::c_void,
+        dwbuffersize: u32,
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+}
