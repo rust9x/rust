@@ -124,7 +124,11 @@ fn msys_tty_on(handle: BorrowedHandle<'_>) -> bool {
     let mut name_info = FILE_NAME_INFO { FileNameLength: 0, FileName: [0; c::MAX_PATH as usize] };
     // Safety: buffer length is fixed.
     let res = unsafe {
-        c::GetFileInformationByHandleEx(
+        #[cfg(target_vendor = "rust9x")]
+        let Some(fun) = c::GetFileInformationByHandleEx::available() else { return false };
+        #[cfg(not(target_vendor = "rust9x"))]
+        let fun = c::GetFileInformationByHandleEx;
+        fun(
             handle.as_raw_handle(),
             c::FileNameInfo,
             (&raw mut name_info) as *mut c_void,
