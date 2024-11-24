@@ -385,11 +385,8 @@ impl File {
                 // remove the fallback.
                 let alloc = c::FILE_ALLOCATION_INFO { AllocationSize: 0 };
                 set_file_information_by_handle(handle.as_raw_handle(), &alloc)
-                    .or_else(|_| {
-                        let eof = c::FILE_END_OF_FILE_INFO { EndOfFile: 0 };
-                        set_file_information_by_handle(handle.as_raw_handle(), &eof)
-                    })
-                    .io_result()?;
+                    .io_result()
+                    .or_else(|_| Self::truncate_inner(handle.as_raw_handle(), 0))?;
             }
             Ok(File { handle: Handle::from_inner(handle) })
         } else {
@@ -515,8 +512,37 @@ impl File {
     }
 
     pub fn truncate(&self, size: u64) -> io::Result<()> {
+        Self::truncate_inner(self.handle.as_raw_handle(), size)
+    }
+
+    #[cfg(not(target_family = "rust9x"))]
+    pub fn truncate_inner(handle: RawHandle, size: u64) -> io::Result<()> {
         let info = c::FILE_END_OF_FILE_INFO { EndOfFile: size as i64 };
-        api::set_file_information_by_handle(self.handle.as_raw_handle(), &info).io_result()
+        api::set_file_information_by_handle(handle, &info).io_result()
+    }
+
+    #[cfg(target_family = "rust9x")]
+    pub fn truncate_inner(handle: RawHandle, size: u64) -> io::Result<()> {
+        if c::SetFileInformationByHandle::available().is_some() {
+            let info = c::FILE_END_OF_FILE_INFO { EndOfFile: size as i64 };
+            api::set_file_information_by_handle(handle, &info).io_result()
+        } else {
+            let mut saved_pos = 0i64;
+            unsafe {
+                // get current file pointer position
+                cvt(c::SetFilePointerEx(handle, 0, &mut saved_pos, c::FILE_CURRENT))?;
+
+                // seek to new end position
+                cvt(c::SetFilePointerEx(handle, size as i64, ptr::null_mut(), c::FILE_BEGIN))?;
+
+                // set current position as end of file
+                cvt(c::SetEndOfFile(handle))?;
+
+                // go back to saved position
+                cvt(c::SetFilePointerEx(handle, saved_pos, ptr::null_mut(), c::FILE_BEGIN))?;
+            }
+            Ok(())
+        }
     }
 
     #[cfg(not(target_vendor = "uwp"))]
@@ -526,15 +552,22 @@ impl File {
             cvt(c::GetFileInformationByHandle(self.handle.as_raw_handle(), &mut info))?;
             let mut reparse_tag = 0;
             if info.dwFileAttributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-                let mut attr_tag: c::FILE_ATTRIBUTE_TAG_INFO = mem::zeroed();
-                cvt(c::GetFileInformationByHandleEx(
-                    self.handle.as_raw_handle(),
-                    c::FileAttributeTagInfo,
-                    (&raw mut attr_tag).cast(),
-                    size_of::<c::FILE_ATTRIBUTE_TAG_INFO>().try_into().unwrap(),
-                ))?;
-                if attr_tag.FileAttributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-                    reparse_tag = attr_tag.ReparseTag;
+                #[cfg(target_family = "rust9x")]
+                let f = c::GetFileInformationByHandleEx::available();
+                #[cfg(not(target_family = "rust9x"))]
+                let f = Some(c::GetFileInformationByHandleEx);
+
+                if let Some(f) = f {
+                    let mut attr_tag: c::FILE_ATTRIBUTE_TAG_INFO = mem::zeroed();
+                    cvt(f(
+                        self.handle.as_raw_handle(),
+                        c::FileAttributeTagInfo,
+                        (&raw mut attr_tag).cast(),
+                        size_of::<c::FILE_ATTRIBUTE_TAG_INFO>().try_into().unwrap(),
+                    ))?;
+                    if attr_tag.FileAttributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+                        reparse_tag = attr_tag.ReparseTag;
+                    }
                 }
             }
             Ok(FileAttr {

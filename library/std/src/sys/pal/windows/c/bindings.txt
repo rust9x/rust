@@ -2223,6 +2223,7 @@ InitializeProcThreadAttributeList
 InitOnceBeginInitialize
 InitOnceComplete
 INVALID_FILE_ATTRIBUTES
+INVALID_SET_FILE_POINTER
 INVALID_SOCKET
 IO_REPARSE_TAG_MOUNT_POINT
 IO_REPARSE_TAG_SYMLINK
@@ -2397,10 +2398,12 @@ SEND_RECV_FLAGS
 sendto
 SET_FILE_POINTER_MOVE_METHOD
 SetCurrentDirectoryW
+SetEndOfFile
 SetEnvironmentVariableW
 SetEvent
 SetFileAttributesW
 SetFileInformationByHandle
+SetFilePointer
 SetFilePointerEx
 SetFileTime
 SetHandleInformation
