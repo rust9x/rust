@@ -62,6 +62,10 @@ CreateSymbolicLinkW
 CreateThread
 CreateWaitableTimerExW
 CRITICAL_SECTION
+CRYPT_VERIFYCONTEXT
+CryptAcquireContextA
+CryptGenRandom
+CryptReleaseContext
 CSTR_EQUAL
 CSTR_GREATER_THAN
 CSTR_LESS_THAN
@@ -2193,6 +2197,7 @@ GetSystemTime
 GetSystemTimeAsFileTime
 GetSystemTimePreciseAsFileTime
 GetTempPathW
+GetTickCount
 GetUserProfileDirectoryW
 GetVersion
 GetWindowsDirectoryW
@@ -2346,6 +2351,7 @@ PROFILE_KERNEL
 PROFILE_SERVER
 PROFILE_USER
 PROGRESS_CONTINUE
+PROV_RSA_FULL
 QueryDosDeviceW
 QueryPerformanceCounter
 QueryPerformanceFrequency
