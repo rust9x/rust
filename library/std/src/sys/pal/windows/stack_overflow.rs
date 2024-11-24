@@ -34,7 +34,13 @@ pub fn init() {
         let result = c::AddVectoredExceptionHandler(0, Some(vectored_handler));
         // Similar to the above, adding the stack overflow handler is allowed to fail
         // but a debug assert is used so CI will still test that it normally works.
+        #[cfg(not(target_family = "rust9x"))]
         debug_assert!(!result.is_null(), "failed to install exception handler");
+        #[cfg(target_family = "rust9x")]
+        debug_assert!(
+            !result.is_null() || c::AddVectoredExceptionHandler::available().is_none(),
+            "failed to install exception handler"
+        );
     }
     // Set the thread stack guarantee for the main thread.
     reserve_stack();
