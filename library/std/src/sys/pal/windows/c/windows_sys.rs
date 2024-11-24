@@ -104,10 +104,12 @@ windows_link::link!("kernel32.dll" "system" fn ResetEvent(hevent : HANDLE) -> BO
 windows_link::link!("advapi32.dll" "system" "SystemFunction036" fn RtlGenRandom(randombuffer : *mut core::ffi::c_void, randombufferlength : u32) -> bool);
 windows_link::link!("ntdll.dll" "system" fn RtlNtStatusToDosError(status : NTSTATUS) -> u32);
 windows_link::link!("kernel32.dll" "system" fn SetCurrentDirectoryW(lppathname : PCWSTR) -> BOOL);
+windows_link::link!("kernel32.dll" "system" fn SetEndOfFile(hfile : HANDLE) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn SetEnvironmentVariableW(lpname : PCWSTR, lpvalue : PCWSTR) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn SetEvent(hevent : HANDLE) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn SetFileAttributesW(lpfilename : PCWSTR, dwfileattributes : u32) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn SetFileInformationByHandle(hfile : HANDLE, fileinformationclass : FILE_INFO_BY_HANDLE_CLASS, lpfileinformation : *const core::ffi::c_void, dwbuffersize : u32) -> BOOL);
+windows_link::link!("kernel32.dll" "system" fn SetFilePointer(hfile : HANDLE, ldistancetomove : i32, lpdistancetomovehigh : *mut i32, dwmovemethod : u32) -> u32);
 windows_link::link!("kernel32.dll" "system" fn SetFilePointerEx(hfile : HANDLE, lidistancetomove : i64, lpnewfilepointer : *mut i64, dwmovemethod : u32) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn SetFileTime(hfile : HANDLE, lpcreationtime : *const FILETIME, lplastaccesstime : *const FILETIME, lplastwritetime : *const FILETIME) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn SetHandleInformation(hobject : HANDLE, dwmask : u32, dwflags : u32) -> BOOL);
@@ -2811,6 +2813,7 @@ pub const INHERIT_PARENT_AFFINITY: i32 = 65536;
 pub type INIT_ONCE = RTL_RUN_ONCE;
 pub const INIT_ONCE_INIT_FAILED: u32 = 4;
 pub const INVALID_FILE_ATTRIBUTES: u32 = 4294967295;
+pub const INVALID_SET_FILE_POINTER: u32 = 4294967295;
 pub const INVALID_SOCKET: SOCKET = 18446744073709551615u64 as usize;
 #[repr(C)]
 #[derive(Clone, Copy)]
