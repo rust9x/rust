@@ -2188,6 +2188,11 @@ Windows.Win32.Networking.WinSock.WSATRY_AGAIN
 Windows.Win32.Networking.WinSock.WSATYPE_NOT_FOUND
 Windows.Win32.Networking.WinSock.WSAVERNOTSUPPORTED
 Windows.Win32.Security.Authentication.Identity.RtlGenRandom
+Windows.Win32.Security.Cryptography.CRYPT_VERIFYCONTEXT
+Windows.Win32.Security.Cryptography.CryptAcquireContextA
+Windows.Win32.Security.Cryptography.CryptGenRandom
+Windows.Win32.Security.Cryptography.CryptReleaseContext
+Windows.Win32.Security.Cryptography.PROV_RSA_FULL
 Windows.Win32.Security.SECURITY_ATTRIBUTES
 Windows.Win32.Security.TOKEN_ACCESS_MASK
 Windows.Win32.Security.TOKEN_ACCESS_PSEUDO_HANDLE
@@ -2497,6 +2502,7 @@ Windows.Win32.System.SystemInformation.GetSystemInfo
 Windows.Win32.System.SystemInformation.GetSystemTime
 Windows.Win32.System.SystemInformation.GetSystemTimeAsFileTime
 Windows.Win32.System.SystemInformation.GetSystemTimePreciseAsFileTime
+Windows.Win32.System.SystemInformation.GetTickCount
 Windows.Win32.System.SystemInformation.GetVersion
 Windows.Win32.System.SystemInformation.GetWindowsDirectoryW
 Windows.Win32.System.SystemInformation.PROCESSOR_ARCHITECTURE
