@@ -61,6 +61,7 @@ windows_targets::link!("kernel32.dll" "system" fn GetProcessId(process : HANDLE)
 windows_targets::link!("kernel32.dll" "system" fn GetStdHandle(nstdhandle : STD_HANDLE) -> HANDLE);
 windows_targets::link!("kernel32.dll" "system" fn GetSystemDirectoryW(lpbuffer : PWSTR, usize : u32) -> u32);
 windows_targets::link!("kernel32.dll" "system" fn GetSystemInfo(lpsysteminfo : *mut SYSTEM_INFO));
+windows_targets::link!("kernel32.dll" "system" fn GetSystemTime(lpsystemtime : *mut SYSTEMTIME));
 windows_targets::link!("kernel32.dll" "system" fn GetSystemTimeAsFileTime(lpsystemtimeasfiletime : *mut FILETIME));
 windows_targets::link!("kernel32.dll" "system" fn GetSystemTimePreciseAsFileTime(lpsystemtimeasfiletime : *mut FILETIME));
 windows_targets::link!("kernel32.dll" "system" fn GetTempPathW(nbufferlength : u32, lpbuffer : PWSTR) -> u32);
@@ -102,6 +103,7 @@ windows_targets::link!("kernel32.dll" "system" fn Sleep(dwmilliseconds : u32));
 windows_targets::link!("kernel32.dll" "system" fn SleepConditionVariableSRW(conditionvariable : *mut CONDITION_VARIABLE, srwlock : *mut SRWLOCK, dwmilliseconds : u32, flags : u32) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn SleepEx(dwmilliseconds : u32, balertable : BOOL) -> u32);
 windows_targets::link!("kernel32.dll" "system" fn SwitchToThread() -> BOOL);
+windows_targets::link!("kernel32.dll" "system" fn SystemTimeToFileTime(lpsystemtime : *const SYSTEMTIME, lpfiletime : *mut FILETIME) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn TerminateProcess(hprocess : HANDLE, uexitcode : u32) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn TlsAlloc() -> u32);
 windows_targets::link!("kernel32.dll" "system" fn TlsFree(dwtlsindex : u32) -> BOOL);
@@ -3054,6 +3056,18 @@ pub const SYMBOLIC_LINK_FLAG_DIRECTORY: SYMBOLIC_LINK_FLAGS = 1u32;
 pub const SYMLINK_FLAG_RELATIVE: u32 = 1u32;
 pub type SYNCHRONIZATION_ACCESS_RIGHTS = u32;
 pub const SYNCHRONIZE: FILE_ACCESS_RIGHTS = 1048576u32;
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct SYSTEMTIME {
+    pub wYear: u16,
+    pub wMonth: u16,
+    pub wDayOfWeek: u16,
+    pub wDay: u16,
+    pub wHour: u16,
+    pub wMinute: u16,
+    pub wSecond: u16,
+    pub wMilliseconds: u16,
+}
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct SYSTEM_INFO {
