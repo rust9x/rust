@@ -2491,6 +2491,7 @@ Windows.Win32.System.Pipes.PIPE_TYPE_MESSAGE
 Windows.Win32.System.Pipes.PIPE_WAIT
 Windows.Win32.System.SystemInformation.GetSystemDirectoryW
 Windows.Win32.System.SystemInformation.GetSystemInfo
+Windows.Win32.System.SystemInformation.GetSystemTime
 Windows.Win32.System.SystemInformation.GetSystemTimeAsFileTime
 Windows.Win32.System.SystemInformation.GetSystemTimePreciseAsFileTime
 Windows.Win32.System.SystemInformation.GetVersion
@@ -2616,5 +2617,6 @@ Windows.Win32.System.Threading.WaitForMultipleObjects
 Windows.Win32.System.Threading.WaitForSingleObject
 Windows.Win32.System.Threading.WakeAllConditionVariable
 Windows.Win32.System.Threading.WakeConditionVariable
+Windows.Win32.System.Time.SystemTimeToFileTime
 Windows.Win32.System.WindowsProgramming.PROGRESS_CONTINUE
 Windows.Win32.UI.Shell.GetUserProfileDirectoryW
