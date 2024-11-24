@@ -21,6 +21,9 @@ windows_link::link!("kernel32.dll" "system" fn CreateProcessW(lpapplicationname 
 windows_link::link!("kernel32.dll" "system" fn CreateSymbolicLinkW(lpsymlinkfilename : PCWSTR, lptargetfilename : PCWSTR, dwflags : SYMBOLIC_LINK_FLAGS) -> bool);
 windows_link::link!("kernel32.dll" "system" fn CreateThread(lpthreadattributes : *const SECURITY_ATTRIBUTES, dwstacksize : usize, lpstartaddress : LPTHREAD_START_ROUTINE, lpparameter : *const core::ffi::c_void, dwcreationflags : THREAD_CREATION_FLAGS, lpthreadid : *mut u32) -> HANDLE);
 windows_link::link!("kernel32.dll" "system" fn CreateWaitableTimerExW(lptimerattributes : *const SECURITY_ATTRIBUTES, lptimername : PCWSTR, dwflags : u32, dwdesiredaccess : u32) -> HANDLE);
+windows_link::link!("advapi32.dll" "system" fn CryptAcquireContextA(phprov : *mut usize, szcontainer : PCSTR, szprovider : PCSTR, dwprovtype : u32, dwflags : u32) -> BOOL);
+windows_link::link!("advapi32.dll" "system" fn CryptGenRandom(hprov : usize, dwlen : u32, pbbuffer : *mut u8) -> BOOL);
+windows_link::link!("advapi32.dll" "system" fn CryptReleaseContext(hprov : usize, dwflags : u32) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn DeleteCriticalSection(lpcriticalsection : *mut CRITICAL_SECTION));
 windows_link::link!("kernel32.dll" "system" fn DeleteFileW(lpfilename : PCWSTR) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn DeleteProcThreadAttributeList(lpattributelist : LPPROC_THREAD_ATTRIBUTE_LIST));
@@ -72,6 +75,7 @@ windows_link::link!("kernel32.dll" "system" fn GetSystemTime(lpsystemtime : *mut
 windows_link::link!("kernel32.dll" "system" fn GetSystemTimeAsFileTime(lpsystemtimeasfiletime : *mut FILETIME));
 windows_link::link!("kernel32.dll" "system" fn GetSystemTimePreciseAsFileTime(lpsystemtimeasfiletime : *mut FILETIME));
 windows_link::link!("kernel32.dll" "system" fn GetTempPathW(nbufferlength : u32, lpbuffer : PWSTR) -> u32);
+windows_link::link!("kernel32.dll" "system" fn GetTickCount() -> u32);
 windows_link::link!("userenv.dll" "system" fn GetUserProfileDirectoryW(htoken : HANDLE, lpprofiledir : PWSTR, lpcchsize : *mut u32) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn GetVersion() -> u32);
 windows_link::link!("kernel32.dll" "system" fn GetWindowsDirectoryW(lpbuffer : PWSTR, usize : u32) -> u32);
@@ -520,6 +524,7 @@ impl Default for CRITICAL_SECTION_DEBUG {
         unsafe { core::mem::zeroed() }
     }
 }
+pub const CRYPT_VERIFYCONTEXT: u32 = 4026531840u32;
 pub const CSTR_EQUAL: COMPARESTRING_RESULT = 2i32;
 pub const CSTR_GREATER_THAN: COMPARESTRING_RESULT = 3i32;
 pub const CSTR_LESS_THAN: COMPARESTRING_RESULT = 1i32;
@@ -3181,6 +3186,7 @@ pub const PROFILE_KERNEL: PROCESS_CREATION_FLAGS = 536870912u32;
 pub const PROFILE_SERVER: PROCESS_CREATION_FLAGS = 1073741824u32;
 pub const PROFILE_USER: PROCESS_CREATION_FLAGS = 268435456u32;
 pub const PROGRESS_CONTINUE: COPYPROGRESSROUTINE_PROGRESS = 0u32;
+pub const PROV_RSA_FULL: u32 = 1u32;
 pub type PSID = *mut core::ffi::c_void;
 pub type PSTR = *mut u8;
 pub type PTIMERAPCROUTINE = Option<
