@@ -1573,6 +1573,7 @@ fn get_path(f: &File) -> io::Result<PathBuf> {
     )
 }
 
+#[cfg(not(target_family = "rust9x"))]
 pub fn canonicalize(p: &WCStr) -> io::Result<PathBuf> {
     let mut opts = OpenOptions::new();
     // No read or write permissions are necessary
@@ -1581,6 +1582,27 @@ pub fn canonicalize(p: &WCStr) -> io::Result<PathBuf> {
     opts.custom_flags(c::FILE_FLAG_BACKUP_SEMANTICS);
     let f = File::open_native(p, &opts)?;
     get_path(&f)
+}
+
+#[cfg(target_family = "rust9x")]
+pub fn canonicalize(p: &WCStr) -> io::Result<PathBuf> {
+    if c::GetFinalPathNameByHandleW::available().is_some() {
+        let mut opts = OpenOptions::new();
+        // No read or write permissions are necessary
+        opts.access_mode(0);
+        // This flag is so we can open directories too
+        opts.custom_flags(c::FILE_FLAG_BACKUP_SEMANTICS);
+        let f = File::open_native(p, &opts)?;
+        get_path(&f)
+    } else {
+        // systems that don't support GetFinalPathNameByHandleW also don't support symlinks, so we
+        // fall back to using GetFullPathName.
+        let mut file_part = ptr::null_mut();
+        fill_utf16_buf(
+            |buf, sz| unsafe { c::GetFullPathNameW(p.as_ptr(), sz, buf, &mut file_part) },
+            |buf| PathBuf::from(OsString::from_wide(buf)),
+        )
+    }
 }
 
 pub fn copy(from: &WCStr, to: &WCStr) -> io::Result<u64> {
