@@ -332,3 +332,17 @@ compat_fn_with_fallback! {
         rtabort!("unimplemented")
     }
 }
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= XP
+    // https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-addvectoredexceptionhandler
+    pub fn AddVectoredExceptionHandler(
+        first: u32,
+        handler: PVECTORED_EXCEPTION_HANDLER
+    ) -> *mut core::ffi::c_void { core::ptr::null_mut() }
+    // >= Vista / Server 2003 SP1 / XPx64
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreadstackguarantee
+    pub fn SetThreadStackGuarantee(stacksizeinbytes: *mut u32) -> BOOL { TRUE }
+}
