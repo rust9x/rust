@@ -412,5 +412,36 @@ compat_fn_with_fallback! {
         unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
         FALSE
     }
+
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createsymboliclinkw
+    pub fn CreateSymbolicLinkW(
+        lpsymlinkfilename: PCWSTR,
+        lptargetfilename: PCWSTR,
+        dwflags: SYMBOLIC_LINK_FLAGS,
+    ) -> bool {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        false
+    }
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew
+    pub fn GetFinalPathNameByHandleW(
+        hfile: HANDLE,
+        lpszfilepath: PWSTR,
+        cchfilepath: u32,
+        dwflags: GETFINALPATHNAMEBYHANDLE_FLAGS
+    ) -> u32 {
+        rtabort!("unimplemented")
+    }
+    // >= 2000
+    // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createhardlinkw
+    pub fn CreateHardLinkW(
+        lpfilename: PCWSTR,
+        lpexistingfilename: PCWSTR,
+        lpsecurityattributes: *const SECURITY_ATTRIBUTES,
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
 }
 
