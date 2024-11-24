@@ -111,7 +111,7 @@ if #[cfg(not(target_vendor = "uwp"))] {
 }
 
 // Use raw-dylib to import ProcessPrng as we can't rely on there being an import library.
-#[cfg(not(target_vendor = "win7"))]
+#[cfg(not(any(target_vendor = "win7", target_vendor = "rust9x")))]
 #[cfg_attr(
     target_arch = "x86",
     link(name = "bcryptprimitives", kind = "raw-dylib", import_name_type = "undecorated")
@@ -481,3 +481,36 @@ compat_fn_with_fallback! {
         FALSE
     }
 }
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static advapi32: &CStr = c"advapi32" => { load: true, unicows: false };
+    // >= XP / Server 2003
+    // https://learn.microsoft.com/en-us/windows/win32/api/ntsecapi/nf-ntsecapi-rtlgenrandom
+    pub fn SystemFunction036(
+        randombuffer: *mut core::ffi::c_void,
+        randombufferlength: u32
+    ) -> BOOLEAN {
+        unimplemented!()
+    }
+
+    // >= NT 4.0 / Windows 95 OSR2 / Windows 95 with IE 3.02
+    // https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptacquirecontexta
+    pub fn CryptAcquireContextA(
+        phprov: *mut usize,
+        szcontainer: PCSTR,
+        szprovider: PCSTR,
+        dwprovtype: u32,
+        dwflags: u32
+    ) -> BOOL {
+        unimplemented!()
+    }
+    pub fn CryptReleaseContext(hprov: usize, dwflags: u32) -> BOOL {
+        unimplemented!()
+    }
+    pub fn CryptGenRandom(hprov: usize, dwlen: u32, pbbuffer: *mut u8) -> BOOL {
+        unimplemented!()
+    }
+}
+#[cfg(target_vendor = "rust9x")]
+pub use self::SystemFunction036 as RtlGenRandom;
