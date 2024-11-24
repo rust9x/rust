@@ -446,3 +446,38 @@ compat_fn_with_fallback! {
         FALSE
     }
 }
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createsymboliclinkw
+    pub fn CreateSymbolicLinkW(
+        lpsymlinkfilename: PCWSTR,
+        lptargetfilename: PCWSTR,
+        dwflags: SYMBOLIC_LINK_FLAGS,
+    ) -> BOOLEAN {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        0
+    }
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew
+    pub fn GetFinalPathNameByHandleW(
+        hfile: HANDLE,
+        lpszfilepath: PWSTR,
+        cchfilepath: u32,
+        dwflags: GETFINALPATHNAMEBYHANDLE_FLAGS
+    ) -> u32 {
+        unimplemented!()
+    }
+    // >= 2000
+    // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createhardlinkw
+    pub fn CreateHardLinkW(
+        lpfilename: PCWSTR,
+        lpexistingfilename: PCWSTR,
+        lpsecurityattributes: *const SECURITY_ATTRIBUTES,
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+}
