@@ -432,6 +432,7 @@ impl Command {
                 Process {
                     handle: Handle::from_raw_handle(pi.hProcess),
                     main_thread_handle: Handle::from_raw_handle(pi.hThread),
+                    id: pi.dwProcessId,
                 },
                 pipes,
             ))
@@ -688,6 +689,7 @@ impl From<io::Stderr> for Stdio {
 pub struct Process {
     handle: Handle,
     main_thread_handle: Handle,
+    id: u32,
 }
 
 impl Process {
@@ -706,7 +708,7 @@ impl Process {
     }
 
     pub fn id(&self) -> u32 {
-        unsafe { c::GetProcessId(self.handle.as_raw_handle()) }
+        self.id
     }
 
     pub fn main_thread_handle(&self) -> BorrowedHandle<'_> {
