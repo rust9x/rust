@@ -320,7 +320,7 @@ pub fn temp_dir() -> PathBuf {
     super::fill_utf16_buf(|buf, sz| unsafe { c::GetTempPath2W(sz, buf) }, super::os2path).unwrap()
 }
 
-#[cfg(all(not(target_vendor = "uwp"), not(target_vendor = "win7")))]
+#[cfg(all(not(target_vendor = "uwp"), not(target_vendor = "win7"), not(target_vendor = "rust9x")))]
 fn home_dir_crt() -> Option<PathBuf> {
     unsafe {
         // Defined in processthreadsapi.h.
@@ -346,7 +346,7 @@ fn home_dir_crt() -> Option<PathBuf> {
     }
 }
 
-#[cfg(target_vendor = "win7")]
+#[cfg(any(target_vendor = "win7", target_vendor = "rust9x"))]
 fn home_dir_crt() -> Option<PathBuf> {
     unsafe {
         use crate::sys::handle::Handle;
