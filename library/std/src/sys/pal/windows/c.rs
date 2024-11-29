@@ -481,6 +481,18 @@ compat_fn_with_fallback! {
     pub fn DeleteProcThreadAttributeList(lpattributelist: LPPROC_THREAD_ATTRIBUTE_LIST) {
         rtabort!("unimplemented")
     }
+
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/stringapiset/nf-stringapiset-comparestringordinal
+    pub fn CompareStringOrdinal(
+        lpstring1: PCWSTR,
+        cchcount1: i32,
+        lpstring2: PCWSTR,
+        cchcount2: i32,
+        bignorecase: BOOL,
+    ) -> COMPARESTRING_RESULT {
+        rtabort!("unimplemented")
+    }
 }
 
 #[cfg(target_family = "rust9x")]
