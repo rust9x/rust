@@ -69,6 +69,13 @@ impl EnvKey {
 // [4] https://docs.microsoft.com/en-us/windows/win32/api/stringapiset/nf-stringapiset-comparestringordinal
 impl Ord for EnvKey {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
+        #[cfg(target_vendor = "rust9x")]
+        {
+            if c::CompareStringOrdinal::available().is_none() {
+                return self.os_string.cmp(&other.os_string);
+            }
+        }
+
         unsafe {
             let result = c::CompareStringOrdinal(
                 self.utf16.as_ptr(),
@@ -120,6 +127,15 @@ impl PartialEq<str> for EnvKey {
 // they are compared using a caseless string mapping.
 impl From<OsString> for EnvKey {
     fn from(k: OsString) -> Self {
+        #[cfg(target_vendor = "rust9x")]
+        {
+            if c::CompareStringOrdinal::available().is_none() {
+                let mut k = k;
+                k.make_ascii_uppercase();
+                return EnvKey { utf16: Vec::new(), os_string: k };
+            }
+        }
+
         EnvKey { utf16: k.encode_wide().collect(), os_string: k }
     }
 }
