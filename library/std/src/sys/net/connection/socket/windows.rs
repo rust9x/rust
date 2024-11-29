@@ -16,7 +16,7 @@ use crate::{cmp, mem, ptr, sys};
 #[allow(non_camel_case_types)]
 pub type wrlen_t = i32;
 
-pub(super) mod netc {
+pub(crate) mod netc {
     //! BSD socket compatibility shim
     //!
     //! Some Windows API types are not quite what's expected by our cross-platform
@@ -118,7 +118,7 @@ pub struct Socket(OwnedSocket);
 impl Socket {
     pub fn new(family: c_int, ty: c_int) -> io::Result<Socket> {
         let socket = unsafe {
-            c::WSASocketW(
+            c::WSASocketA(
                 family,
                 ty,
                 0,
@@ -138,7 +138,7 @@ impl Socket {
             }
 
             let socket =
-                unsafe { c::WSASocketW(family, ty, 0, ptr::null_mut(), 0, c::WSA_FLAG_OVERLAPPED) };
+                unsafe { c::WSASocketA(family, ty, 0, ptr::null_mut(), 0, c::WSA_FLAG_OVERLAPPED) };
 
             if socket == c::INVALID_SOCKET {
                 return Err(last_error());
