@@ -53,7 +53,7 @@ pub const FILE_READ_ATTRIBUTES: u32 = cu(windows_sys::FILE_READ_ATTRIBUTES);
 pub const FILE_WRITE_ATTRIBUTES: u32 = cu(windows_sys::FILE_WRITE_ATTRIBUTES);
 pub const FILE_TRAVERSE: u32 = cu(windows_sys::FILE_TRAVERSE);
 pub const TIMER_ALL_ACCESS: u32 = cu(windows_sys::TIMER_ALL_ACCESS);
-#[cfg(target_vendor = "win7")]
+#[cfg(any(target_vendor = "win7", target_family = "rust9x"))]
 pub const TOKEN_READ: u32 = cu(windows_sys::TOKEN_READ);
 
 // dwOptions -- DuplicateHandle
@@ -699,3 +699,33 @@ compat_fn_with_fallback! {
 }
 #[cfg(target_family = "rust9x")]
 pub use self::SystemFunction036 as RtlGenRandom;
+
+#[cfg(target_family = "rust9x")]
+compat_fn_with_fallback! {
+    pub static userenv: &CStr = c"userenv" => { load: true, unicows: false };
+    // >= NT 4.0
+    // https://learn.microsoft.com/en-us/windows/win32/api/userenv/nf-userenv-getuserprofiledirectoryw
+    pub fn GetUserProfileDirectoryW(
+        htoken: HANDLE,
+        lpprofiledir: PWSTR,
+        lpcchsize: *mut u32
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+}
+
+#[cfg(target_family = "rust9x")]
+compat_fn_with_fallback! {
+    pub static advapi32: &CStr = c"advapi32" => { load: true, unicows: false };
+    // >= NT
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-openprocesstoken
+    pub fn OpenProcessToken(
+        processhandle: HANDLE,
+        desiredaccess: u32,
+        tokenhandle: *mut HANDLE
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+}
