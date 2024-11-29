@@ -8,6 +8,16 @@ use crate::sys::pal::winsock::{self, cvt};
 pub fn hostname() -> Result<OsString> {
     winsock::startup();
 
+    #[cfg(target_family = "rust9x")]
+    if c::GetHostNameW::available().is_none() {
+        use core::ffi::CStr;
+        let mut buffer = [const { MaybeUninit::<u8>::uninit() }; 256];
+        cvt(unsafe { c::gethostname(buffer.as_mut_ptr().cast(), buffer.len() as i32) })?;
+        return unsafe {
+            Ok(OsString::from(CStr::from_ptr(buffer.as_ptr().cast()).to_str().unwrap()))
+        };
+    }
+
     // The documentation of GetHostNameW says that a buffer size of 256 is
     // always enough.
     let mut buffer = [const { MaybeUninit::<u16>::uninit() }; 256];
