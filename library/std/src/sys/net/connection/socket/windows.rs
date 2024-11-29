@@ -17,7 +17,7 @@ use crate::{cmp, mem, ptr, sys};
 #[allow(non_camel_case_types)]
 pub type wrlen_t = i32;
 
-pub(super) mod netc {
+pub(crate) mod netc {
     //! BSD socket compatibility shim
     //!
     //! Some Windows API types are not quite what's expected by our cross-platform

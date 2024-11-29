@@ -2178,6 +2178,8 @@ GetFileType
 GETFINALPATHNAMEBYHANDLE_FLAGS
 GetFinalPathNameByHandleW
 GetFullPathNameW
+gethostbyname
+gethostname
 GetHostNameW
 GetLastError
 GetModuleFileNameW
@@ -2187,6 +2189,7 @@ GetOverlappedResult
 getpeername
 GetProcAddress
 GetProcessId
+getservbyname
 getsockname
 getsockopt
 GetStdHandle
@@ -2209,6 +2212,8 @@ HMODULE
 IDLE_PRIORITY_CLASS
 IN6_ADDR
 IN_ADDR
+inet_addr
+inet_ntoa
 INFINITE
 INHERIT_CALLER_PRIORITY
 INHERIT_PARENT_AFFINITY
