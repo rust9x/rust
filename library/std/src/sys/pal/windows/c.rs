@@ -454,6 +454,33 @@ compat_fn_with_fallback! {
         unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
         FALSE
     }
+
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-initializeprocthreadattributelist
+    pub fn InitializeProcThreadAttributeList(
+        lpattributelist: LPPROC_THREAD_ATTRIBUTE_LIST,
+        dwattributecount: u32,
+        dwflags: u32,
+        lpsize: *mut usize
+    ) -> BOOL {
+        rtabort!("unimplemented")
+    }
+    // >= Vista / Server 2008
+    pub fn UpdateProcThreadAttribute(
+        lpattributelist: LPPROC_THREAD_ATTRIBUTE_LIST,
+        dwflags: u32,
+        attribute: usize,
+        lpvalue: *const core::ffi::c_void,
+        cbsize: usize,
+        lppreviousvalue: *mut core::ffi::c_void,
+        lpreturnsize: *const usize
+    ) -> BOOL {
+        rtabort!("unimplemented")
+    }
+    // >= Vista / Server 2008
+    pub fn DeleteProcThreadAttributeList(lpattributelist: LPPROC_THREAD_ATTRIBUTE_LIST) {
+        rtabort!("unimplemented")
+    }
 }
 
 #[cfg(target_family = "rust9x")]
@@ -570,3 +597,4 @@ mod wship6 {
         }
     }
 }
+

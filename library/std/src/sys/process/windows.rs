@@ -395,7 +395,17 @@ impl Command {
 
         let mut si_ex;
 
-        if let Some(proc_thread_attribute_list) = proc_thread_attribute_list {
+        #[allow(unused)]
+        let mut proc_thread_addributes_supported = true;
+        #[cfg(target_family = "rust9x")]
+        {
+            proc_thread_addributes_supported =
+                c::InitializeProcThreadAttributeList::available().is_some();
+        }
+
+        if let Some(proc_thread_attribute_list) = proc_thread_attribute_list
+            && proc_thread_addributes_supported
+        {
             si.cb = size_of::<c::STARTUPINFOEXW>() as u32;
             flags |= c::EXTENDED_STARTUPINFO_PRESENT;
 
