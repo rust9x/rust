@@ -2119,6 +2119,7 @@ Windows.Win32.Networking.WinSock.WSABASEERR
 Windows.Win32.Networking.WinSock.WSABUF
 Windows.Win32.Networking.WinSock.WSACleanup
 Windows.Win32.Networking.WinSock.WSADATA
+Windows.Win32.Networking.WinSock.WSADuplicateSocketA
 Windows.Win32.Networking.WinSock.WSADuplicateSocketW
 Windows.Win32.Networking.WinSock.WSAEACCES
 Windows.Win32.Networking.WinSock.WSAEADDRINUSE
@@ -2175,11 +2176,13 @@ Windows.Win32.Networking.WinSock.WSAHOST_NOT_FOUND
 Windows.Win32.Networking.WinSock.WSANO_DATA
 Windows.Win32.Networking.WinSock.WSANO_RECOVERY
 Windows.Win32.Networking.WinSock.WSANOTINITIALISED
+Windows.Win32.Networking.WinSock.WSAPROTOCOL_INFOA
 Windows.Win32.Networking.WinSock.WSAPROTOCOL_INFOW
 Windows.Win32.Networking.WinSock.WSAPROTOCOLCHAIN
 Windows.Win32.Networking.WinSock.WSARecv
 Windows.Win32.Networking.WinSock.WSASend
 Windows.Win32.Networking.WinSock.WSASERVICE_NOT_FOUND
+Windows.Win32.Networking.WinSock.WSASocketA
 Windows.Win32.Networking.WinSock.WSASocketW
 Windows.Win32.Networking.WinSock.WSAStartup
 Windows.Win32.Networking.WinSock.WSASYSCALLFAILURE

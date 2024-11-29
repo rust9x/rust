@@ -1855,7 +1855,7 @@ fn windows_unix_socket_exists() {
     // std doesn't currently support Unix sockets on Windows so manually create one here.
     net::init();
     unsafe {
-        let socket = c::WSASocketW(
+        let socket = c::WSASocketA(
             c::AF_UNIX as i32,
             c::SOCK_STREAM,
             0,
