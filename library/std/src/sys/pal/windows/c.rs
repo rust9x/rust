@@ -513,3 +513,33 @@ compat_fn_with_fallback! {
 }
 #[cfg(target_vendor = "rust9x")]
 pub use self::SystemFunction036 as RtlGenRandom;
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static userenv: &CStr = c"userenv" => { load: true, unicows: false };
+    // >= NT 4.0
+    // https://learn.microsoft.com/en-us/windows/win32/api/userenv/nf-userenv-getuserprofiledirectoryw
+    pub fn GetUserProfileDirectoryW(
+        htoken: HANDLE,
+        lpprofiledir: PWSTR,
+        lpcchsize: *mut u32
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+}
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static advapi32: &CStr = c"advapi32" => { load: true, unicows: false };
+    // >= NT
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-openprocesstoken
+    pub fn OpenProcessToken(
+        processhandle: HANDLE,
+        desiredaccess: TOKEN_ACCESS_MASK,
+        tokenhandle: *mut HANDLE
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+}
