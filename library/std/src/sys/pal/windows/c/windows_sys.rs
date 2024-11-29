@@ -60,6 +60,7 @@ windows_link::link!("kernel32.dll" "system" fn GetFileSizeEx(hfile : HANDLE, lpf
 windows_link::link!("kernel32.dll" "system" fn GetFileType(hfile : HANDLE) -> FILE_TYPE);
 windows_link::link!("kernel32.dll" "system" fn GetFinalPathNameByHandleW(hfile : HANDLE, lpszfilepath : PWSTR, cchfilepath : u32, dwflags : GETFINALPATHNAMEBYHANDLE_FLAGS) -> u32);
 windows_link::link!("kernel32.dll" "system" fn GetFullPathNameW(lpfilename : PCWSTR, nbufferlength : u32, lpbuffer : PWSTR, lpfilepart : *mut PWSTR) -> u32);
+windows_link::link!("ws2_32.dll" "system" fn GetHostNameW(name : PWSTR, namelen : i32) -> i32);
 windows_link::link!("kernel32.dll" "system" fn GetLastError() -> WIN32_ERROR);
 windows_link::link!("kernel32.dll" "system" fn GetModuleFileNameW(hmodule : HMODULE, lpfilename : PWSTR, nsize : u32) -> u32);
 windows_link::link!("kernel32.dll" "system" fn GetModuleHandleA(lpmodulename : PCSTR) -> HMODULE);
@@ -139,10 +140,12 @@ windows_link::link!("kernel32.dll" "system" fn TryEnterCriticalSection(lpcritica
 windows_link::link!("kernel32.dll" "system" fn UnlockFile(hfile : HANDLE, dwfileoffsetlow : u32, dwfileoffsethigh : u32, nnumberofbytestounlocklow : u32, nnumberofbytestounlockhigh : u32) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn UpdateProcThreadAttribute(lpattributelist : LPPROC_THREAD_ATTRIBUTE_LIST, dwflags : u32, attribute : usize, lpvalue : *const core::ffi::c_void, cbsize : usize, lppreviousvalue : *mut core::ffi::c_void, lpreturnsize : *const usize) -> BOOL);
 windows_link::link!("ws2_32.dll" "system" fn WSACleanup() -> i32);
+windows_link::link!("ws2_32.dll" "system" fn WSADuplicateSocketA(s : SOCKET, dwprocessid : u32, lpprotocolinfo : *mut WSAPROTOCOL_INFOA) -> i32);
 windows_link::link!("ws2_32.dll" "system" fn WSADuplicateSocketW(s : SOCKET, dwprocessid : u32, lpprotocolinfo : *mut WSAPROTOCOL_INFOW) -> i32);
 windows_link::link!("ws2_32.dll" "system" fn WSAGetLastError() -> WSA_ERROR);
 windows_link::link!("ws2_32.dll" "system" fn WSARecv(s : SOCKET, lpbuffers : *const WSABUF, dwbuffercount : u32, lpnumberofbytesrecvd : *mut u32, lpflags : *mut u32, lpoverlapped : *mut OVERLAPPED, lpcompletionroutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) -> i32);
 windows_link::link!("ws2_32.dll" "system" fn WSASend(s : SOCKET, lpbuffers : *const WSABUF, dwbuffercount : u32, lpnumberofbytessent : *mut u32, dwflags : u32, lpoverlapped : *mut OVERLAPPED, lpcompletionroutine : LPWSAOVERLAPPED_COMPLETION_ROUTINE) -> i32);
+windows_link::link!("ws2_32.dll" "system" fn WSASocketA(af : i32, r#type : i32, protocol : i32, lpprotocolinfo : *const WSAPROTOCOL_INFOA, g : u32, dwflags : u32) -> SOCKET);
 windows_link::link!("ws2_32.dll" "system" fn WSASocketW(af : i32, r#type : i32, protocol : i32, lpprotocolinfo : *const WSAPROTOCOL_INFOW, g : u32, dwflags : u32) -> SOCKET);
 windows_link::link!("ws2_32.dll" "system" fn WSAStartup(wversionrequested : u16, lpwsadata : *mut WSADATA) -> i32);
 windows_link::link!("kernel32.dll" "system" fn WaitForMultipleObjects(ncount : u32, lphandles : *const HANDLE, bwaitall : BOOL, dwmilliseconds : u32) -> WAIT_EVENT);
@@ -158,9 +161,14 @@ windows_link::link!("ws2_32.dll" "system" fn closesocket(s : SOCKET) -> i32);
 windows_link::link!("ws2_32.dll" "system" fn connect(s : SOCKET, name : *const SOCKADDR, namelen : i32) -> i32);
 windows_link::link!("ws2_32.dll" "system" fn freeaddrinfo(paddrinfo : *const ADDRINFOA));
 windows_link::link!("ws2_32.dll" "system" fn getaddrinfo(pnodename : PCSTR, pservicename : PCSTR, phints : *const ADDRINFOA, ppresult : *mut *mut ADDRINFOA) -> i32);
+windows_link::link!("ws2_32.dll" "system" fn gethostbyname(name : PCSTR) -> *mut HOSTENT);
+windows_link::link!("ws2_32.dll" "system" fn gethostname(name : PSTR, namelen : i32) -> i32);
 windows_link::link!("ws2_32.dll" "system" fn getpeername(s : SOCKET, name : *mut SOCKADDR, namelen : *mut i32) -> i32);
+windows_link::link!("ws2_32.dll" "system" fn getservbyname(name : PCSTR, proto : PCSTR) -> *mut SERVENT);
 windows_link::link!("ws2_32.dll" "system" fn getsockname(s : SOCKET, name : *mut SOCKADDR, namelen : *mut i32) -> i32);
 windows_link::link!("ws2_32.dll" "system" fn getsockopt(s : SOCKET, level : i32, optname : i32, optval : PSTR, optlen : *mut i32) -> i32);
+windows_link::link!("ws2_32.dll" "system" fn inet_addr(cp : PCSTR) -> u32);
+windows_link::link!("ws2_32.dll" "system" fn inet_ntoa(r#in : IN_ADDR) -> PSTR);
 windows_link::link!("ws2_32.dll" "system" fn ioctlsocket(s : SOCKET, cmd : i32, argp : *mut u32) -> i32);
 windows_link::link!("ws2_32.dll" "system" fn listen(s : SOCKET, backlog : i32) -> i32);
 windows_link::link!("kernel32.dll" "system" fn lstrlenW(lpstring : PCWSTR) -> i32);
@@ -2829,6 +2837,20 @@ pub const HIGH_PRIORITY_CLASS: PROCESS_CREATION_FLAGS = 128u32;
 pub type HINSTANCE = *mut core::ffi::c_void;
 pub type HLOCAL = *mut core::ffi::c_void;
 pub type HMODULE = *mut core::ffi::c_void;
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct HOSTENT {
+    pub h_name: PSTR,
+    pub h_aliases: *mut *mut i8,
+    pub h_addrtype: i16,
+    pub h_length: i16,
+    pub h_addr_list: *mut *mut i8,
+}
+impl Default for HOSTENT {
+    fn default() -> Self {
+        unsafe { core::mem::zeroed() }
+    }
+}
 pub type HRESULT = i32;
 pub const IDLE_PRIORITY_CLASS: PROCESS_CREATION_FLAGS = 64u32;
 #[repr(C)]
@@ -3251,6 +3273,36 @@ pub struct SECURITY_QUALITY_OF_SERVICE {
 pub const SECURITY_SQOS_PRESENT: FILE_FLAGS_AND_ATTRIBUTES = 1048576u32;
 pub const SECURITY_VALID_SQOS_FLAGS: FILE_FLAGS_AND_ATTRIBUTES = 2031616u32;
 pub type SEND_RECV_FLAGS = i32;
+#[repr(C)]
+#[cfg(target_arch = "x86")]
+#[derive(Clone, Copy)]
+pub struct SERVENT {
+    pub s_name: PSTR,
+    pub s_aliases: *mut *mut i8,
+    pub s_port: i16,
+    pub s_proto: PSTR,
+}
+#[cfg(target_arch = "x86")]
+impl Default for SERVENT {
+    fn default() -> Self {
+        unsafe { core::mem::zeroed() }
+    }
+}
+#[repr(C)]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm64ec", target_arch = "x86_64"))]
+#[derive(Clone, Copy)]
+pub struct SERVENT {
+    pub s_name: PSTR,
+    pub s_aliases: *mut *mut i8,
+    pub s_proto: PSTR,
+    pub s_port: i16,
+}
+#[cfg(any(target_arch = "aarch64", target_arch = "arm64ec", target_arch = "x86_64"))]
+impl Default for SERVENT {
+    fn default() -> Self {
+        unsafe { core::mem::zeroed() }
+    }
+}
 pub type SET_FILE_POINTER_MOVE_METHOD = u32;
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -3632,6 +3684,35 @@ pub struct WSAPROTOCOLCHAIN {
     pub ChainEntries: [u32; 7],
 }
 impl Default for WSAPROTOCOLCHAIN {
+    fn default() -> Self {
+        unsafe { core::mem::zeroed() }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct WSAPROTOCOL_INFOA {
+    pub dwServiceFlags1: u32,
+    pub dwServiceFlags2: u32,
+    pub dwServiceFlags3: u32,
+    pub dwServiceFlags4: u32,
+    pub dwProviderFlags: u32,
+    pub ProviderId: GUID,
+    pub dwCatalogEntryId: u32,
+    pub ProtocolChain: WSAPROTOCOLCHAIN,
+    pub iVersion: i32,
+    pub iAddressFamily: i32,
+    pub iMaxSockAddr: i32,
+    pub iMinSockAddr: i32,
+    pub iSocketType: i32,
+    pub iProtocol: i32,
+    pub iProtocolMaxOffset: i32,
+    pub iNetworkByteOrder: i32,
+    pub iSecurityScheme: i32,
+    pub dwMessageSize: u32,
+    pub dwProviderReserved: u32,
+    pub szProtocol: [i8; 256],
+}
+impl Default for WSAPROTOCOL_INFOA {
     fn default() -> Self {
         unsafe { core::mem::zeroed() }
     }
