@@ -2188,6 +2188,9 @@ GetFileType
 GETFINALPATHNAMEBYHANDLE_FLAGS
 GetFinalPathNameByHandleW
 GetFullPathNameW
+gethostbyname
+gethostname
+GetHostNameW
 GetLastError
 GetModuleFileNameW
 GetModuleHandleA
@@ -2197,6 +2200,7 @@ GetOverlappedResult
 getpeername
 GetProcAddress
 GetProcessId
+getservbyname
 getsockname
 getsockopt
 GetStdHandle
@@ -2219,6 +2223,8 @@ HMODULE
 IDLE_PRIORITY_CLASS
 IN6_ADDR
 IN_ADDR
+inet_addr
+inet_ntoa
 INFINITE
 INHERIT_CALLER_PRIORITY
 INHERIT_PARENT_AFFINITY
@@ -2602,6 +2608,7 @@ WSABASEERR
 WSABUF
 WSACleanup
 WSADATA
+WSADuplicateSocketA
 WSADuplicateSocketW
 WSAEACCES
 WSAEADDRINUSE
@@ -2658,11 +2665,13 @@ WSAHOST_NOT_FOUND
 WSANO_DATA
 WSANO_RECOVERY
 WSANOTINITIALISED
+WSAPROTOCOL_INFOA
 WSAPROTOCOL_INFOW
 WSAPROTOCOLCHAIN
 WSARecv
 WSASend
 WSASERVICE_NOT_FOUND
+WSASocketA
 WSASocketW
 WSAStartup
 WSASYSCALLFAILURE
