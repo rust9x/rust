@@ -110,9 +110,9 @@ impl BorrowedSocket<'_> {
     /// object as the existing `BorrowedSocket` instance.
     #[stable(feature = "io_safety", since = "1.63.0")]
     pub fn try_clone_to_owned(&self) -> io::Result<OwnedSocket> {
-        let mut info = unsafe { mem::zeroed::<sys::c::WSAPROTOCOL_INFOW>() };
+        let mut info = unsafe { mem::zeroed::<sys::c::WSAPROTOCOL_INFOA>() };
         let result = unsafe {
-            sys::c::WSADuplicateSocketW(
+            sys::c::WSADuplicateSocketA(
                 self.as_raw_socket() as sys::c::SOCKET,
                 sys::c::GetCurrentProcessId(),
                 &mut info,
@@ -120,7 +120,7 @@ impl BorrowedSocket<'_> {
         };
         sys::net::cvt(result)?;
         let socket = unsafe {
-            sys::c::WSASocketW(
+            sys::c::WSASocketA(
                 info.iAddressFamily,
                 info.iSocketType,
                 info.iProtocol,
@@ -140,7 +140,7 @@ impl BorrowedSocket<'_> {
             }
 
             let socket = unsafe {
-                sys::c::WSASocketW(
+                sys::c::WSASocketA(
                     info.iAddressFamily,
                     info.iSocketType,
                     info.iProtocol,
