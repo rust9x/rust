@@ -649,3 +649,19 @@ compat_fn_with_fallback! {
         TRUE
     }
 }
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/stringapiset/nf-stringapiset-comparestringordinal
+    pub fn CompareStringOrdinal(
+        lpstring1: PCWSTR,
+        cchcount1: i32,
+        lpstring2: PCWSTR,
+        cchcount2: i32,
+        bignorecase: BOOL,
+    ) -> COMPARESTRING_RESULT {
+        unimplemented!()
+    }
+}
