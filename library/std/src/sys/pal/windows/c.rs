@@ -607,3 +607,34 @@ mod wship6 {
         }
     }
 }
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= Vista / Server 2008
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-initializeprocthreadattributelist
+    pub fn InitializeProcThreadAttributeList(
+        lpattributelist: LPPROC_THREAD_ATTRIBUTE_LIST,
+        dwattributecount: u32,
+        dwflags: u32,
+        lpsize: *mut usize
+    ) -> BOOL {
+        unimplemented!()
+    }
+    // >= Vista / Server 2008
+    pub fn UpdateProcThreadAttribute(
+        lpattributelist: LPPROC_THREAD_ATTRIBUTE_LIST,
+        dwflags: u32,
+        attribute: usize,
+        lpvalue: *const core::ffi::c_void,
+        cbsize: usize,
+        lppreviousvalue: *mut core::ffi::c_void,
+        lpreturnsize: *const usize
+    ) -> BOOL {
+        unimplemented!()
+    }
+    // >= Vista / Server 2008
+    pub fn DeleteProcThreadAttributeList(lpattributelist: LPPROC_THREAD_ATTRIBUTE_LIST) {
+        unimplemented!()
+    }
+}
