@@ -1021,12 +1021,10 @@ fn link_natively(
                         && (code < 1000 || code > 9999)
                     {
                         let is_vs_installed = windows_registry::find_vs_version().is_ok();
+                        let tuple =
+                            sess.opts.target_triple.tuple().to_owned().replace("rust9x", "pc");
                         // FIXME(cc-rs#1265) pass only target arch to find_tool()
-                        let has_linker = windows_registry::find_tool(
-                            sess.opts.target_triple.tuple(),
-                            "link.exe",
-                        )
-                        .is_some();
+                        let has_linker = windows_registry::find_tool(&tuple, "link.exe").is_some();
 
                         sess.dcx().emit_note(errors::LinkExeUnexpectedError);
                         if is_vs_installed && has_linker {
