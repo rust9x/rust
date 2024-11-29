@@ -338,7 +338,7 @@ impl File {
     fn acquire_lock(&self, flags: c::LOCK_FILE_FLAGS) -> io::Result<()> {
         unsafe {
             let mut overlapped: c::OVERLAPPED = mem::zeroed();
-            let event = c::CreateEventW(ptr::null_mut(), c::FALSE, c::FALSE, ptr::null());
+            let event = c::CreateEventA(ptr::null_mut(), c::FALSE, c::FALSE, ptr::null());
             if event.is_null() {
                 return Err(io::Error::last_os_error());
             }

@@ -23,7 +23,7 @@ impl Handle {
     pub fn new_event(manual: bool, init: bool) -> io::Result<Handle> {
         unsafe {
             let event =
-                c::CreateEventW(ptr::null_mut(), manual as c::BOOL, init as c::BOOL, ptr::null());
+                c::CreateEventA(ptr::null_mut(), manual as c::BOOL, init as c::BOOL, ptr::null());
             if event.is_null() {
                 Err(io::Error::last_os_error())
             } else {

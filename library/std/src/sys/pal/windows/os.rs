@@ -31,12 +31,7 @@ pub fn error_string(mut errnum: i32) -> String {
         // GetLastError. For more information about Windows error codes, see
         // `[MS-ERREF]`: https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/0642cb2f-2075-4469-918c-4441e69c548a
         if (errnum & c::FACILITY_NT_BIT as i32) != 0 {
-            // format according to https://support.microsoft.com/en-us/help/259693
-            const NTDLL_DLL: &[u16] = &[
-                'N' as _, 'T' as _, 'D' as _, 'L' as _, 'L' as _, '.' as _, 'D' as _, 'L' as _,
-                'L' as _, 0,
-            ];
-            module = c::GetModuleHandleW(NTDLL_DLL.as_ptr());
+            module = c::GetModuleHandleA(c"NTDLL.DLL".as_ptr().cast());
 
             if !module.is_null() {
                 errnum ^= c::FACILITY_NT_BIT as i32;
