@@ -148,9 +148,13 @@ windows_targets::link!("ws2_32.dll" "system" fn closesocket(s : SOCKET) -> i32);
 windows_targets::link!("ws2_32.dll" "system" fn connect(s : SOCKET, name : *const SOCKADDR, namelen : i32) -> i32);
 windows_targets::link!("ws2_32.dll" "system" fn freeaddrinfo(paddrinfo : *const ADDRINFOA));
 windows_targets::link!("ws2_32.dll" "system" fn getaddrinfo(pnodename : PCSTR, pservicename : PCSTR, phints : *const ADDRINFOA, ppresult : *mut *mut ADDRINFOA) -> i32);
+windows_targets::link!("ws2_32.dll" "system" fn gethostbyname(name : PCSTR) -> *mut HOSTENT);
 windows_targets::link!("ws2_32.dll" "system" fn getpeername(s : SOCKET, name : *mut SOCKADDR, namelen : *mut i32) -> i32);
+windows_targets::link!("ws2_32.dll" "system" fn getservbyname(name : PCSTR, proto : PCSTR) -> *mut SERVENT);
 windows_targets::link!("ws2_32.dll" "system" fn getsockname(s : SOCKET, name : *mut SOCKADDR, namelen : *mut i32) -> i32);
 windows_targets::link!("ws2_32.dll" "system" fn getsockopt(s : SOCKET, level : i32, optname : i32, optval : PSTR, optlen : *mut i32) -> i32);
+windows_targets::link!("ws2_32.dll" "system" fn inet_addr(cp : PCSTR) -> u32);
+windows_targets::link!("ws2_32.dll" "system" fn inet_ntoa(r#in : IN_ADDR) -> PSTR);
 windows_targets::link!("ws2_32.dll" "system" fn ioctlsocket(s : SOCKET, cmd : i32, argp : *mut u32) -> i32);
 windows_targets::link!("ws2_32.dll" "system" fn listen(s : SOCKET, backlog : i32) -> i32);
 windows_targets::link!("ws2_32.dll" "system" fn recv(s : SOCKET, buf : PSTR, len : i32, flags : SEND_RECV_FLAGS) -> i32);
@@ -2650,6 +2654,15 @@ pub const HANDLE_FLAG_PROTECT_FROM_CLOSE: HANDLE_FLAGS = 2u32;
 pub const HIGH_PRIORITY_CLASS: PROCESS_CREATION_FLAGS = 128u32;
 pub type HLOCAL = *mut core::ffi::c_void;
 pub type HMODULE = *mut core::ffi::c_void;
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct HOSTENT {
+    pub h_name: PSTR,
+    pub h_aliases: *mut *mut i8,
+    pub h_addrtype: i16,
+    pub h_length: i16,
+    pub h_addr_list: *mut *mut i8,
+}
 pub type HRESULT = i32;
 pub const IDLE_PRIORITY_CLASS: PROCESS_CREATION_FLAGS = 64u32;
 #[repr(C)]
@@ -2958,6 +2971,24 @@ pub const SECURITY_IMPERSONATION: FILE_FLAGS_AND_ATTRIBUTES = 131072u32;
 pub const SECURITY_SQOS_PRESENT: FILE_FLAGS_AND_ATTRIBUTES = 1048576u32;
 pub const SECURITY_VALID_SQOS_FLAGS: FILE_FLAGS_AND_ATTRIBUTES = 2031616u32;
 pub type SEND_RECV_FLAGS = i32;
+#[repr(C)]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm64ec", target_arch = "x86_64"))]
+#[derive(Clone, Copy)]
+pub struct SERVENT {
+    pub s_name: PSTR,
+    pub s_aliases: *mut *mut i8,
+    pub s_proto: PSTR,
+    pub s_port: i16,
+}
+#[repr(C)]
+#[cfg(target_arch = "x86")]
+#[derive(Clone, Copy)]
+pub struct SERVENT {
+    pub s_name: PSTR,
+    pub s_aliases: *mut *mut i8,
+    pub s_port: i16,
+    pub s_proto: PSTR,
+}
 pub type SET_FILE_POINTER_MOVE_METHOD = u32;
 #[repr(C)]
 #[derive(Clone, Copy)]

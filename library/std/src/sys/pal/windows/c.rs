@@ -13,6 +13,9 @@ use core::{mem, ptr};
 mod windows_sys;
 pub use windows_sys::*;
 
+#[cfg(target_vendor = "rust9x")]
+pub(crate) mod wspiapi;
+
 pub type WCHAR = u16;
 
 pub const INVALID_HANDLE_VALUE: HANDLE = ::core::ptr::without_provenance_mut(-1i32 as _);
@@ -542,5 +545,65 @@ compat_fn_with_fallback! {
     ) -> BOOL {
         unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
         FALSE
+    }
+}
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= NT 3.51+
+    // https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-sethandleinformation
+    pub fn SetHandleInformation(hobject: HANDLE, dwmask: u32, dwflags: HANDLE_FLAGS) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+}
+
+#[cfg(target_vendor = "rust9x")]
+mod ws2_32 {
+    use super::*;
+    compat_fn_with_fallback! {
+        pub static WS2_32: &CStr = c"ws2_32" => { load: true, unicows: false };
+
+        // >= NT4/2000 with IPv6 Tech Preview
+        // https://learn.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo
+        pub fn getaddrinfo(
+            pnodename: PCSTR,
+            pservicename: PCSTR,
+            phints: *const ADDRINFOA,
+            ppresult: *mut *mut ADDRINFOA,
+        ) -> i32 {
+            unsafe { wship6::getaddrinfo(pnodename, pservicename, phints, ppresult) }
+        }
+        // >= NT4/2000 with IPv6 Tech Preview
+        pub fn freeaddrinfo(paddrinfo: *const ADDRINFOA) -> () {
+            unsafe { wship6::freeaddrinfo(paddrinfo) }
+        }
+    }
+}
+#[cfg(target_vendor = "rust9x")]
+pub use ws2_32::{freeaddrinfo, getaddrinfo};
+
+#[cfg(target_vendor = "rust9x")]
+mod wship6 {
+    use super::wspiapi::{wspiapi_freeaddrinfo, wspiapi_getaddrinfo};
+    use super::{ADDRINFOA, PCSTR};
+
+    compat_fn_with_fallback! {
+        pub static WSHIP6: &CStr = c"wship6" => { load: true, unicows: false };
+
+        // >= 2000 with IPv6 Tech Preview
+        pub fn getaddrinfo(
+            pnodename: PCSTR,
+            pservicename: PCSTR,
+            phints: *const ADDRINFOA,
+            ppresult: *mut *mut ADDRINFOA,
+        ) -> i32 {
+            unsafe { wspiapi_getaddrinfo(pnodename, pservicename, phints, ppresult) }
+        }
+        // >= 2000 with IPv6 Tech Preview
+        pub fn freeaddrinfo(paddrinfo: *const ADDRINFOA)-> () {
+            unsafe { wspiapi_freeaddrinfo(paddrinfo) }
+        }
     }
 }
