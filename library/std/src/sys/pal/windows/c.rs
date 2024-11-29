@@ -607,3 +607,14 @@ compat_fn_with_fallback! {
         rtabort!("unimplemented")
     }
 }
+
+#[cfg(target_family = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: true };
+    // >= NT 3.5+, 95+
+    // https://learn.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-freeenvironmentstringsw
+    pub fn FreeEnvironmentStringsW(penv: PCWSTR) -> BOOL {
+        // just leak it on NT 3.1
+        TRUE
+    }
+}
