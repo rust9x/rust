@@ -308,6 +308,7 @@
 #![feature(macro_metavar_expr_concat)]
 #![feature(min_specialization)]
 #![feature(must_not_suspend)]
+#![feature(naked_functions)]
 #![feature(needs_panic_runtime)]
 #![feature(negative_impls)]
 #![feature(never_type)]
