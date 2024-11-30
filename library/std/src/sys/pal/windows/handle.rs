@@ -245,6 +245,32 @@ impl Handle {
 
         // The length is clamped at u32::MAX.
         let len = cmp::min(len, u32::MAX as usize) as u32;
+
+        #[cfg(target_vendor = "rust9x")]
+        if !crate::sys::compat::checks::supports_async_io() {
+            unsafe {
+                if let Some(offset) = offset {
+                    cvt(c::SetFilePointerEx(
+                        self.as_raw_handle(),
+                        offset as i64,
+                        ptr::null_mut(),
+                        c::FILE_BEGIN,
+                    ))?;
+                }
+
+                let mut bytes_read = 0;
+                cvt(c::ReadFile(
+                    self.as_raw_handle(),
+                    buf.cast(),
+                    len,
+                    &mut bytes_read,
+                    ptr::null_mut(),
+                ))?;
+
+                return Ok(bytes_read as usize);
+            }
+        }
+
         // SAFETY: It's up to the caller to ensure `buf` is writeable up to
         // the provided `len`.
         let status = unsafe {
@@ -297,6 +323,32 @@ impl Handle {
 
         // The length is clamped at u32::MAX.
         let len = cmp::min(buf.len(), u32::MAX as usize) as u32;
+
+        #[cfg(target_vendor = "rust9x")]
+        if !crate::sys::compat::checks::supports_async_io() {
+            unsafe {
+                if let Some(offset) = offset {
+                    cvt(c::SetFilePointerEx(
+                        self.as_raw_handle(),
+                        offset as i64,
+                        ptr::null_mut(),
+                        c::FILE_BEGIN,
+                    ))?;
+                }
+
+                let mut bytes_written = 0;
+                cvt(c::WriteFile(
+                    self.as_raw_handle(),
+                    buf.as_ptr(),
+                    len,
+                    &mut bytes_written,
+                    ptr::null_mut(),
+                ))?;
+
+                return Ok(bytes_written as usize);
+            }
+        }
+
         let status = unsafe {
             c::NtWriteFile(
                 self.as_raw_handle(),
