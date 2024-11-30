@@ -194,6 +194,18 @@ fn write_valid_utf8_to_console(handle: c::HANDLE, utf8: &str) -> io::Result<usiz
     let utf8 = &utf8[..utf8.floor_char_boundary(utf16.len())];
 
     let utf16: &[u16] = unsafe {
+        cfg_select! {
+            target_family = "rust9x" => {
+                let mut len_utf16 = 0;
+                for (chr, dest) in utf8.encode_utf16().zip(utf16.iter_mut()) {
+                    dest.write(chr);
+                    len_utf16 += 1;
+                }
+                utf16[..len_utf16].assume_init_ref()
+            }
+            _ => { // target_family != "rust9x"
+
+
         // Note that this theoretically checks validity twice in the (most common) case
         // where the underlying byte sequence is valid utf-8 (given the check in `write()`).
         let result = c::MultiByteToWideChar(
@@ -208,6 +220,10 @@ fn write_valid_utf8_to_console(handle: c::HANDLE, utf8: &str) -> io::Result<usiz
 
         // Safety: MultiByteToWideChar initializes `result` values.
         utf16[..result as usize].assume_init_ref()
+
+
+            } // target_family != "rust9x" END
+        }
     };
 
     let mut written = write_u16s(handle, utf16)?;
@@ -216,6 +232,14 @@ fn write_valid_utf8_to_console(handle: c::HANDLE, utf8: &str) -> io::Result<usiz
     if written == utf16.len() {
         Ok(utf8.len())
     } else {
+        #[cfg(target_family = "rust9x")]
+        if !crate::sys::compat::checks::is_windows_nt() {
+            // FIXME: This function should manually convert to the target codepage on 9x/ME, and
+            // handle incomplete writes by calculating how many utf8-effective bytes were written.
+            // For now, we assume that the 8KB buffer is always fully written.
+            return Ok(utf8.len());
+        }
+
         // Make sure we didn't end up writing only half of a surrogate pair (even though the chance
         // is tiny). Because it is not possible for user code to re-slice `data` in such a way that
         // a missing surrogate can be produced (and also because of the UTF-8 validation above),
@@ -400,6 +424,24 @@ fn utf16_to_utf8(utf16: &[u16], utf8: &mut [u8]) -> io::Result<usize> {
         return Ok(0);
     }
 
+    cfg_select! {
+        target_family = "rust9x" => {
+            let mut written = 0;
+            let result = 'result: {
+                for chr in char::decode_utf16(utf16.iter().cloned()) {
+                    match chr {
+                        Ok(chr) => {
+                            chr.encode_utf8(&mut utf8[written..]);
+                            written += chr.len_utf8();
+                        }
+                        Err(_) => { break 'result 0; } // invalid UTF-16 sequence
+                    }
+                }
+                written as i32
+            };
+        }
+        _ => { // target_family != "rust9x"
+
     let result = unsafe {
         c::WideCharToMultiByte(
             c::CP_UTF8,              // CodePage
@@ -412,6 +454,10 @@ fn utf16_to_utf8(utf16: &[u16], utf8: &mut [u8]) -> io::Result<usize> {
             ptr::null_mut(),         // lpUsedDefaultChar
         )
     };
+
+        }
+    }
+
     if result == 0 {
         // We can't really do any better than forget all data and return an error.
         Err(io::const_error!(
