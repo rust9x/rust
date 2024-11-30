@@ -151,9 +151,11 @@ pub const STACK_SIZE_PARAM_IS_A_RESERVATION: u32 =
     cu(windows_sys::STACK_SIZE_PARAM_IS_A_RESERVATION);
 
 // dwFlags -- WideCharToMultiByte
+#[cfg(not(target_family = "rust9x"))]
 pub const WC_ERR_INVALID_CHARS: u32 = cu(windows_sys::WC_ERR_INVALID_CHARS);
 
 // dwFlags -- MultiByteToWideChar
+#[cfg(not(target_family = "rust9x"))]
 pub const MB_ERR_INVALID_CHARS: u32 = cu(windows_sys::MB_ERR_INVALID_CHARS);
 
 // dwFlags -- CreateWaitableTimerExW
@@ -195,6 +197,7 @@ pub const FSCTL_SET_REPARSE_POINT: u32 = cu(windows_sys::FSCTL_SET_REPARSE_POINT
 pub const FILE_TYPE_PIPE: u32 = cu(windows_sys::FILE_TYPE_PIPE);
 
 // GetACP return value (UINT)
+#[cfg(not(target_family = "rust9x"))]
 pub const CP_UTF8: u32 = windows_sys::CP_UTF8.cast_unsigned();
 
 // WaitForSingleObject return value (DWORD)
