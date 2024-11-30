@@ -28,7 +28,26 @@ pub fn is_windows_nt() -> bool {
     true // let me know once someone ported 9x to 64bit LOL
 }
 
+#[inline(always)]
+pub fn supports_async_io() -> bool {
+    unsafe { SUPPORTS_ASYNC_IO }
+}
+
+/// Whether the new way (just opening \??\PIPE\ / \Device\NamedPipe without a file/pipe name creates
+/// an anon pipe) is supported.
+///
+/// Prior to Vista (NT 6), kernel32's `CreatePipe` would create a pipe with a unique name via
+/// `_sprintf(Buffer, "\\Device\\NamedPipe\\Win32Pipes.%08x.%08x", process_id, global_counter)`;
+///
+/// see https://github.com/rust-lang/rust/pull/142517
+#[inline(always)]
+pub fn supports_anon_pipe_autoname() -> bool {
+    unsafe { SUPPORTS_ANON_PIPE_AUTONAME }
+}
+
 static mut IS_NT: bool = false;
+static mut SUPPORTS_ASYNC_IO: bool = false;
+static mut SUPPORTS_ANON_PIPE_AUTONAME: bool = false;
 
 /// On Windows 9x / ME, the byte offset within the TIB (at `fs:[0x18]`) of the pointer to the
 /// current thread's TDBX (thread database extension). This differs between 95/98 and ME.
@@ -56,6 +75,12 @@ fn init_windows_version_check() {
     unsafe {
         let version = c::GetVersion();
         IS_NT = version < 0x8000_0000;
+
+        let major = (version & 0xFF) as u8;
+        let minor = ((version >> 8) & 0xFF) as u8;
+
+        SUPPORTS_ASYNC_IO = IS_NT && c::CancelIo::available().is_some();
+        SUPPORTS_ANON_PIPE_AUTONAME = IS_NT && major >= 0x06; // Vista+/NT6+
 
         #[cfg(target_arch = "x86")]
         if !IS_NT {
