@@ -16,6 +16,11 @@ pub fn is_windows_nt() -> bool {
     true // let me know once someone ported 9x to 64bit LOL
 }
 
+#[inline(always)]
+pub fn supports_async_io() -> bool {
+    unsafe { SUPPORTS_ASYNC_IO }
+}
+
 pub fn init_rust9x_checks() {
     // DO NOT do anything interesting or complicated in this function! DO NOT call
     // any Rust functions or CRT functions if those functions touch any global state,
@@ -27,10 +32,14 @@ pub fn init_rust9x_checks() {
 }
 
 static mut IS_NT: bool = true;
+static mut SUPPORTS_ASYNC_IO: bool = true;
 
 fn init_windows_version_check() {
     // according to old MSDN info, the high-order bit is set only on 95/98/ME.
-    unsafe { IS_NT = c::GetVersion() < 0x8000_0000 };
+    unsafe {
+        IS_NT = c::GetVersion() < 0x8000_0000;
+        SUPPORTS_ASYNC_IO = IS_NT && c::CancelIo::available().is_some();
+    };
 }
 
 #[derive(Clone, Copy, PartialEq)]
