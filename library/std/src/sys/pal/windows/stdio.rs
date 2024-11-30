@@ -378,6 +378,10 @@ fn utf16_to_utf8(utf16: &[u16], utf8: &mut [u8]) -> io::Result<usize> {
         return Ok(0);
     }
 
+    #[cfg(target_vendor = "rust9x")]
+    let is_nt = crate::sys::compat::checks::is_windows_nt();
+
+    #[cfg(not(target_vendor = "rust9x"))]
     let result = unsafe {
         c::WideCharToMultiByte(
             c::CP_UTF8,              // CodePage
@@ -390,6 +394,39 @@ fn utf16_to_utf8(utf16: &[u16], utf8: &mut [u8]) -> io::Result<usize> {
             ptr::null_mut(),         // lpUsedDefaultChar
         )
     };
+
+    #[cfg(target_vendor = "rust9x")]
+    let result = {
+        let mut result = unsafe {
+            c::WideCharToMultiByte(
+                c::CP_UTF8,                                      // CodePage
+                if is_nt { c::WC_ERR_INVALID_CHARS } else { 0 }, // dwFlags
+                utf16.as_ptr(),                                  // lpWideCharStr
+                utf16.len() as i32,                              // cchWideChar
+                utf8.as_mut_ptr(),                               // lpMultiByteStr
+                utf8.len() as i32,                               // cbMultiByte
+                ptr::null(),                                     // lpDefaultChar
+                ptr::null_mut(),                                 // lpUsedDefaultChar
+            )
+        };
+
+        if result == 0 && unsafe { c::GetLastError() } == c::ERROR_INVALID_FLAGS && is_nt {
+            result = unsafe {
+                c::WideCharToMultiByte(
+                    c::CP_UTF8,         // CodePage
+                    0,                  // dwFlags (0 for pre-Vista compatibility)
+                    utf16.as_ptr(),     // lpWideCharStr
+                    utf16.len() as i32, // cchWideChar
+                    utf8.as_mut_ptr(),  // lpMultiByteStr
+                    utf8.len() as i32,  // cbMultiByte
+                    ptr::null(),        // lpDefaultChar
+                    ptr::null_mut(),    // lpUsedDefaultChar
+                )
+            };
+        }
+        result
+    };
+
     if result == 0 {
         // We can't really do any better than forget all data and return an error.
         Err(io::const_io_error!(
