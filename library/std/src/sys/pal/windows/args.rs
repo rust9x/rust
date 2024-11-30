@@ -333,7 +333,17 @@ pub(crate) fn make_bat_command_line(
     // hence the trailing quote here. It will be closed after all arguments
     // have been added.
     // Using /e:ON enables "command extensions" which is essential for the `%` hack to work.
+    #[cfg(not(target_vendor = "rust9x"))]
     let mut cmd: Vec<u16> = "cmd.exe /e:ON /v:OFF /d /c \"".encode_utf16().collect();
+    #[cfg(target_vendor = "rust9x")]
+    let mut cmd: Vec<u16> = if crate::sys::compat::checks::is_windows_nt() {
+        // Using /X instead of /e:ON for old NT versions.
+        "cmd.exe /X /v:OFF /d /c \""
+    } else {
+        "command.com /c \""
+    }
+    .encode_utf16()
+    .collect();
 
     // Push the script name surrounded by its quote pair.
     cmd.push(b'"' as u16);
