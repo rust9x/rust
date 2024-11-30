@@ -288,12 +288,27 @@ impl Command {
             None
         };
         let program = resolve_exe(&self.program, || env::var_os("PATH"), child_paths)?;
+        #[cfg(not(target_vendor = "rust9x"))]
         let has_bat_extension = |program: &[u16]| {
             matches!(
                 // Case insensitive "ends_with" of UTF-16 encoded ".bat" or ".cmd"
                 program.len().checked_sub(4).and_then(|i| program.get(i..)),
                 Some([46, 98 | 66, 97 | 65, 116 | 84] | [46, 99 | 67, 109 | 77, 100 | 68])
             )
+        };
+        #[cfg(target_vendor = "rust9x")]
+        let has_bat_extension = |program: &[u16]| {
+            let ext = program.len().checked_sub(4).and_then(|i| program.get(i..));
+            if crate::sys::compat::checks::is_windows_nt() {
+                matches!(
+                    // Case insensitive "ends_with" of UTF-16 encoded ".bat" or ".cmd"
+                    ext,
+                    Some([46, 98 | 66, 97 | 65, 116 | 84] | [46, 99 | 67, 109 | 77, 100 | 68])
+                )
+            } else {
+                // Case insensitive "ends_with" of UTF-16 encoded ".bat"
+                matches!(ext, Some([46, 98 | 66, 97 | 65, 116 | 84, 0]))
+            }
         };
         let is_batch_file = if path::is_verbatim(&program) {
             has_bat_extension(&program[..program.len() - 1])
@@ -318,7 +333,16 @@ impl Command {
         cmd_str.push(0); // add null terminator
 
         // stolen from the libuv code.
+        #[cfg(not(target_vendor = "rust9x"))]
         let mut flags = self.flags | c::CREATE_UNICODE_ENVIRONMENT;
+        #[cfg(target_vendor = "rust9x")]
+        let mut flags = {
+            let mut flags = self.flags;
+            if crate::sys::compat::checks::is_windows_nt() {
+                flags |= c::CREATE_UNICODE_ENVIRONMENT;
+            }
+            flags
+        };
         if self.detach {
             flags |= c::DETACHED_PROCESS | c::CREATE_NEW_PROCESS_GROUP;
         }
@@ -640,6 +664,17 @@ impl Stdio {
                 opts.read(stdio_id == c::STD_INPUT_HANDLE);
                 opts.write(stdio_id != c::STD_INPUT_HANDLE);
                 opts.security_attributes(&mut sa);
+
+                #[cfg(target_vendor = "rust9x")]
+                {
+                    let p = if crate::sys::compat::checks::is_windows_nt() {
+                        r"\\.\NUL"
+                    } else {
+                        r"NUL"
+                    };
+                    File::open(Path::new(p), &opts).map(|file| file.into_inner())
+                }
+                #[cfg(not(target_vendor = "rust9x"))]
                 File::open(Path::new(r"\\.\NUL"), &opts).map(|file| file.into_inner())
             }
         }
@@ -877,12 +912,34 @@ fn make_command_line(argv0: &OsStr, args: &[Arg], force_quotes: bool) -> io::Res
 
 // Get `cmd.exe` for use with bat scripts, encoded as a UTF-16 string.
 fn command_prompt() -> io::Result<Vec<u16>> {
-    let mut system: Vec<u16> = super::fill_utf16_buf(
-        |buf, size| unsafe { c::GetSystemDirectoryW(buf, size) },
-        |buf| buf.into(),
-    )?;
-    system.extend("\\cmd.exe".encode_utf16().chain([0]));
-    Ok(system)
+    #[cfg(target_vendor = "rust9x")]
+    {
+        if crate::sys::compat::checks::is_windows_nt() {
+            let mut system: Vec<u16> = super::fill_utf16_buf(
+                |buf, size| unsafe { c::GetSystemDirectoryW(buf, size) },
+                |buf| buf.into(),
+            )?;
+            system.extend("\\cmd.exe".encode_utf16().chain([0]));
+            Ok(system)
+        } else {
+            let mut system: Vec<u16> = super::fill_utf16_buf(
+                |buf, size| unsafe { c::GetWindowsDirectoryW(buf, size) },
+                |buf| buf.into(),
+            )?;
+            system.extend("\\command.com".encode_utf16().chain([0]));
+            Ok(system)
+        }
+    }
+
+    #[cfg(not(target_vendor = "rust9x"))]
+    {
+        let mut system: Vec<u16> = super::fill_utf16_buf(
+            |buf, size| unsafe { c::GetSystemDirectoryW(buf, size) },
+            |buf| buf.into(),
+        )?;
+        system.extend("\\cmd.exe".encode_utf16().chain([0]));
+        Ok(system)
+    }
 }
 
 fn make_envp(maybe_env: Option<BTreeMap<EnvKey, OsString>>) -> io::Result<(*mut c_void, Vec<u16>)> {
