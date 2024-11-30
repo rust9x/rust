@@ -57,6 +57,133 @@ pub(super) fn child_pipe(ours_readable: bool, their_handle_inheritable: bool) ->
     // A 64kb pipe capacity is the same as a typical Linux default.
     const PIPE_BUFFER_CAPACITY: u32 = 64 * 1024;
 
+    // Since Windows 9X/ME does not support creating named pipes (only connecting to remote pipes
+    // created on NT), we'll have to make do with anonymous pipes, without overlapped I/O. In
+    // particular, this means that we'll have to do reading from two threads in the case where both
+    // stdout and stderr being piped (see `read_output`).
+
+    // 9X/ME *does* have a kernel32 export entry for `CreateNamedPipe`, so an availability check
+    // would not work. We're just gonna check the bit that's only set on non-unicode Windows
+    // versions instead...
+
+    // The `ChildPipe` impl used in `read_output` below needs to be able to cancel the overlapped i/o
+    // operation, so we also have to check for `CancelIo` being available. This means that the
+    // "modern" path is taken only for NT4+.
+    #[cfg(target_family = "rust9x")]
+    if !crate::sys::compat::checks::supports_async_io() {
+        let size = mem::size_of::<c::SECURITY_ATTRIBUTES>();
+        let mut sa = c::SECURITY_ATTRIBUTES {
+            nLength: size as u32,
+            lpSecurityDescriptor: ptr::null_mut(),
+            // We follow the old "Creating a Child Process with Redirected Input and Output" MSDN
+            // entry (pre-`SetHandleInformation`) here, duplicating the handle that is not being
+            // sent to the child process as non-inheritable and then closing the inheritable one.
+            // Usually, this would be racy, but this function is only called in `Stdio::to_handle`,
+            // which is in turn only called form `process::spawn`, which acquires a lock on process
+            // spawning because of this.
+            bInheritHandle: c::TRUE,
+        };
+
+        unsafe {
+            let mut read_pipe = mem::zeroed();
+            let mut write_pipe = mem::zeroed();
+            crate::sys::cvt(c::CreatePipe(
+                &mut read_pipe,
+                &mut write_pipe,
+                &mut sa,
+                PIPE_BUFFER_CAPACITY,
+            ))?;
+            let read_pipe = Handle::from_raw_handle(read_pipe);
+            let write_pipe = Handle::from_raw_handle(write_pipe);
+
+            let (ours_inheritable, theirs) =
+                if ours_readable { (read_pipe, write_pipe) } else { (write_pipe, read_pipe) };
+
+            // Make `ours` non-inheritable by duplicating it with the approriate setting
+            let ours = ours_inheritable.duplicate(0, false, c::DUPLICATE_SAME_ACCESS)?;
+
+            // close the old, inheritable handle to the pipe end that is ours
+            drop(ours_inheritable);
+
+            return Ok(Pipes {
+                ours: ChildPipe { inner: ours },
+                theirs: ChildPipe { inner: theirs },
+            });
+        }
+    }
+
+    // based on old Rust implementation from before https://github.com/rust-lang/rust/pull/142517:
+    // - https://github.com/rust-lang/rust/blob/64033a4ee541c3e9c178fd593e979c74bb798cdc/library/std/src/sys/pal/windows/pipe.rs
+    // - https://github.com/rust-lang/rust/commit/3371d498b1d6853598b9bedaf1e71d4c3f1d538b:
+    //   `PIPE_REJECT_REMOTE_CLIENTS` was added with Vista, so we don't need to try it in this
+    //   fallback for pre-Vista systems.
+    //
+    #[cfg(target_family = "rust9x")]
+    if !crate::sys::compat::checks::supports_anon_pipe_autoname() {
+        fn pipe_serial_number() -> usize {
+            use crate::sync::atomic::{Atomic, AtomicUsize, Ordering};
+            static N: Atomic<usize> = AtomicUsize::new(0);
+            return N.fetch_add(1, Ordering::Relaxed);
+        }
+
+        unsafe {
+            use crate::ffi::OsStr;
+            use crate::sys::fs::{File, OpenOptions};
+            use crate::sys::path::WCStr;
+
+            let ours;
+            let name = format!(
+                r"\\.\pipe\__rust_pipe{}.{}.{}",
+                c::GetCurrentProcessId(),
+                c::GetTickCount(),
+                pipe_serial_number(),
+            );
+            let wide_name = OsStr::new(&name).encode_wide().chain(Some(0)).collect::<Vec<_>>();
+            let wide_name = WCStr::from_wchars_with_null_unchecked(&wide_name);
+            let mut flags = c::FILE_FLAG_FIRST_PIPE_INSTANCE | c::FILE_FLAG_OVERLAPPED;
+            if ours_readable {
+                flags |= c::PIPE_ACCESS_INBOUND;
+            } else {
+                flags |= c::PIPE_ACCESS_OUTBOUND;
+            }
+
+            let handle = c::CreateNamedPipeW(
+                wide_name.as_ptr(),
+                flags,
+                c::PIPE_TYPE_BYTE | c::PIPE_READMODE_BYTE | c::PIPE_WAIT,
+                1,
+                PIPE_BUFFER_CAPACITY,
+                PIPE_BUFFER_CAPACITY,
+                0,
+                ptr::null_mut(),
+            );
+            if handle == c::INVALID_HANDLE_VALUE {
+                return Err(io::Error::last_os_error());
+            }
+
+            ours = Handle::from_raw_handle(handle);
+
+            // Connect to the named pipe we just created. This handle is going to be
+            // returned in `theirs`, so if `ours` is readable we want this to be
+            // writable, otherwise if `ours` is writable we want this to be
+            // readable.
+            //
+            // Additionally we don't enable overlapped mode on this because most
+            // client processes aren't enabled to work with that.
+            let mut opts = OpenOptions::new();
+            opts.write(ours_readable);
+            opts.read(!ours_readable);
+            opts.share_mode(0);
+            opts.inherit_handle(true);
+            let theirs = File::open_native(wide_name, &opts)?;
+
+            return Ok(Pipes {
+                ours: ChildPipe { inner: ours },
+                theirs: ChildPipe { inner: theirs.into_inner() },
+            });
+        }
+    }
+
     // Note that we specifically do *not* use `CreatePipe` here because
     // unfortunately the anonymous pipes returned do not support overlapped
     // operations. Instead, we use `NtCreateNamedPipeFile` to create the
@@ -241,6 +368,11 @@ impl ChildPipe {
     }
 
     pub fn read(&self, buf: &mut [u8]) -> io::Result<usize> {
+        #[cfg(target_family = "rust9x")]
+        if !crate::sys::compat::checks::supports_async_io() {
+            return self.inner.read(buf);
+        }
+
         let result = unsafe {
             let len = crate::cmp::min(buf.len(), u32::MAX as usize) as u32;
             let ptr = buf.as_mut_ptr();
@@ -260,6 +392,11 @@ impl ChildPipe {
     }
 
     pub fn read_buf(&self, mut buf: BorrowedCursor<'_, u8>) -> io::Result<()> {
+        #[cfg(target_family = "rust9x")]
+        if !crate::sys::compat::checks::supports_async_io() {
+            return self.inner.read_buf(buf);
+        }
+
         let result = unsafe {
             let len = crate::cmp::min(buf.capacity(), u32::MAX as usize) as u32;
             let ptr = buf.as_mut().as_mut_ptr().cast::<u8>();
@@ -298,6 +435,11 @@ impl ChildPipe {
     }
 
     pub fn write(&self, buf: &[u8]) -> io::Result<usize> {
+        #[cfg(target_family = "rust9x")]
+        if !crate::sys::compat::checks::supports_async_io() {
+            return self.inner.write(buf);
+        }
+
         unsafe {
             let len = crate::cmp::min(buf.len(), u32::MAX as usize) as u32;
             self.alertable_io_internal(|overlapped, callback| {
@@ -420,6 +562,24 @@ pub fn read_output(
 ) -> io::Result<()> {
     let p1 = p1.into_handle();
     let p2 = p2.into_handle();
+
+    #[cfg(target_family = "rust9x")]
+    if !crate::sys::compat::checks::supports_async_io() {
+        // Since we are using anonymous pipes (= without overlapped I/O support) here, we can't do
+        // async waiting on both stdout and stderr at the same time on one thread, so we have to
+        // spawn an additional thread to do the waiting for the second pipe.
+
+        // See https://github.com/rust-lang/rust/pull/31618, where this was removed initially.
+        let second_pipe = crate::thread::spawn(move || {
+            let mut ret = Vec::new();
+            (&p2).read_to_end(&mut ret).map(|_| ret)
+        });
+
+        (&p1).read_to_end(v1)?;
+        *v2 = second_pipe.join().unwrap()?;
+
+        return Ok(());
+    }
 
     let mut p1 = AsyncPipe::new(p1, v1)?;
     let mut p2 = AsyncPipe::new(p2, v2)?;
