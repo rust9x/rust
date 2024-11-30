@@ -342,7 +342,7 @@ impl File {
         Self::open_native(&path, opts)
     }
 
-    fn open_native(path: &WCStr, opts: &OpenOptions) -> io::Result<File> {
+    pub(crate) fn open_native(path: &WCStr, opts: &OpenOptions) -> io::Result<File> {
         let creation = opts.get_creation_mode()?;
         let sa = c::SECURITY_ATTRIBUTES {
             nLength: size_of::<c::SECURITY_ATTRIBUTES>() as u32,
