@@ -2421,6 +2421,7 @@ Windows.Win32.Storage.FileSystem.VOLUME_NAME_NONE
 Windows.Win32.Storage.FileSystem.WIN32_FIND_DATAW
 Windows.Win32.Storage.FileSystem.WRITE_DAC
 Windows.Win32.Storage.FileSystem.WRITE_OWNER
+Windows.Win32.Storage.FileSystem.WriteFile
 Windows.Win32.Storage.FileSystem.WriteFileEx
 Windows.Win32.System.Console.CONSOLE_MODE
 Windows.Win32.System.Console.CONSOLE_READCONSOLE_CONTROL

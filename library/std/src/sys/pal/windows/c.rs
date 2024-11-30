@@ -245,7 +245,7 @@ compat_fn_with_fallback! {
     }
 
     // These functions are available on UWP when lazily loaded. They will fail WACK if loaded statically.
-    #[cfg(target_vendor = "uwp")]
+    #[cfg(any(target_vendor = "uwp", target_vendor = "rust9x"))]
     pub fn NtCreateFile(
         filehandle: *mut HANDLE,
         desiredaccess: FILE_ACCESS_RIGHTS,
@@ -261,7 +261,7 @@ compat_fn_with_fallback! {
     ) -> NTSTATUS {
         STATUS_NOT_IMPLEMENTED
     }
-    #[cfg(target_vendor = "uwp")]
+    #[cfg(any(target_vendor = "uwp", target_vendor = "rust9x"))]
     pub fn NtReadFile(
         filehandle: HANDLE,
         event: HANDLE,
@@ -275,7 +275,7 @@ compat_fn_with_fallback! {
     ) -> NTSTATUS {
         STATUS_NOT_IMPLEMENTED
     }
-    #[cfg(target_vendor = "uwp")]
+    #[cfg(any(target_vendor = "uwp", target_vendor = "rust9x"))]
     pub fn NtWriteFile(
         filehandle: HANDLE,
         event: HANDLE,
@@ -289,9 +289,21 @@ compat_fn_with_fallback! {
     ) -> NTSTATUS {
         STATUS_NOT_IMPLEMENTED
     }
-    #[cfg(target_vendor = "uwp")]
+    #[cfg(any(target_vendor = "uwp", target_vendor = "rust9x"))]
     pub fn RtlNtStatusToDosError(Status: NTSTATUS) -> u32 {
         Status as u32
+    }
+
+    #[cfg(target_vendor = "rust9x")]
+    pub fn NtOpenFile(
+        filehandle: *mut HANDLE,
+        desiredaccess: u32,
+        objectattributes: *const OBJECT_ATTRIBUTES,
+        iostatusblock: *mut IO_STATUS_BLOCK,
+        shareaccess: u32,
+        openoptions: u32
+    ) -> NTSTATUS {
+        STATUS_NOT_IMPLEMENTED
     }
 }
 
@@ -663,5 +675,16 @@ compat_fn_with_fallback! {
         bignorecase: BOOL,
     ) -> COMPARESTRING_RESULT {
         unimplemented!()
+    }
+}
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= 98+, NT4.0
+    // https://learn.microsoft.com/en-us/windows/win32/api/stringapiset/nf-stringapiset-comparestringordinal
+    pub fn CancelIo(hfile: HANDLE) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
     }
 }
