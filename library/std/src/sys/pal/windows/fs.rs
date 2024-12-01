@@ -1259,6 +1259,25 @@ pub fn rmdir(p: &Path) -> io::Result<()> {
 }
 
 pub fn remove_dir_all(path: &Path) -> io::Result<()> {
+    #[cfg(target_vendor = "rust9x")]
+    {
+        // if the modern file/directory APIs are not available, we'll fall back to the old (unsafe, see
+        // https://github.com/rust-lang/rust/pull/93112) directory removal implementation
+        if !(c::NtCreateFile::available().is_some()
+            && c::GetFileInformationByHandleEx::available().is_some()
+            && c::SetFileInformationByHandle::available().is_some())
+        {
+            let filetype = lstat(path)?.file_type();
+            if filetype.is_symlink() {
+                // On Windows symlinks to files and directories are removed differently.
+                // rmdir only deletes dir symlinks and junctions, not file symlinks.
+                return rmdir(path);
+            } else {
+                return remove_dir_all::remove_dir_all_recursive_old(path);
+            }
+        }
+    }
+
     // Open a file or directory without following symlinks.
     let mut opts = OpenOptions::new();
     opts.access_mode(c::FILE_LIST_DIRECTORY);
