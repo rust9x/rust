@@ -2136,6 +2136,7 @@ FindClose
 FindExInfoBasic
 FindExSearchNameMatch
 FindFirstFileExW
+FindFirstFileW
 FindNextFileW
 FIONBIO
 FLS_OUT_OF_INDEXES
@@ -2180,6 +2181,7 @@ GetExitCodeProcess
 GetFileAttributesW
 GetFileInformationByHandle
 GetFileInformationByHandleEx
+GetFileSize
 GetFileSizeEx
 GetFileType
 GETFINALPATHNAMEBYHANDLE_FLAGS
@@ -2231,6 +2233,7 @@ InitializeProcThreadAttributeList
 InitOnceBeginInitialize
 InitOnceComplete
 INVALID_FILE_ATTRIBUTES
+INVALID_FILE_SIZE
 INVALID_SET_FILE_POINTER
 INVALID_SOCKET
 IO_REPARSE_TAG_MOUNT_POINT
@@ -2291,6 +2294,7 @@ LINGER
 listen
 LoadLibraryA
 LocalFree
+LockFile
 LOCKFILE_EXCLUSIVE_LOCK
 LOCKFILE_FAIL_IMMEDIATELY
 LockFileEx

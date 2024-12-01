@@ -742,3 +742,55 @@ compat_fn_with_fallback! {
         rtabort!("unimplemented")
     }
 }
+
+#[cfg(target_family = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= NT4.0
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findfirstfileexw
+    pub fn FindFirstFileExW(
+        lpfilename: PCWSTR,
+        finfolevelid: FINDEX_INFO_LEVELS,
+        lpfindfiledata: *mut core::ffi::c_void,
+        fsearchop: FINDEX_SEARCH_OPS,
+        lpsearchfilter: *const core::ffi::c_void,
+        dwadditionalflags: FIND_FIRST_EX_FLAGS
+    ) -> HANDLE {
+        rtabort!("unimplemented")
+    }
+
+    // >= NT
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfileex
+    pub fn LockFileEx(
+        hfile: HANDLE,
+        dwflags: LOCK_FILE_FLAGS,
+        dwreserved: u32,
+        nnumberofbytestolocklow: u32,
+        nnumberofbytestolockhigh: u32,
+        lpoverlapped: *mut OVERLAPPED
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+
+    // >= 2000
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfilesizeex
+    pub fn GetFileSizeEx(
+        hfile: HANDLE,
+        lpfilesize: *mut i64
+    ) -> BOOL {
+        if lpfilesize.is_null() {
+            unsafe { SetLastError(ERROR_INVALID_PARAMETER as u32) };
+            return FALSE;
+        }
+        let mut high32 = 0;
+        let low32 = unsafe { GetFileSize(hfile, &mut high32) };
+        let full_size: u64 = ((high32 as u64) << 32) | (low32 as u64);
+        if low32 == INVALID_FILE_SIZE && unsafe { GetLastError() } != NO_ERROR {
+            FALSE
+        } else {
+            unsafe { *lpfilesize = full_size as i64 };
+            TRUE
+        }
+    }
+}
