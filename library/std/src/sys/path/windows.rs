@@ -80,6 +80,12 @@ pub(crate) fn append_suffix(path: PathBuf, suffix: &OsStr) -> PathBuf {
 /// This path may or may not have a verbatim prefix.
 pub(crate) fn maybe_verbatim(path: &Path) -> io::Result<Vec<u16>> {
     let path = to_u16s(path)?;
+
+    #[cfg(target_family = "rust9x")]
+    if !crate::sys::compat::checks::is_windows_nt() {
+        return Ok(path);
+    }
+
     get_long_path(path, true)
 }
 
