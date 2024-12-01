@@ -2619,6 +2619,9 @@ fn add_native_libs_from_crate(
         return;
     }
 
+    // only need unicows hacks for x86
+    let is_target_rust9x_x86 = sess.target.vendor == "rust9x" && sess.target.arch == "x86";
+
     if link_static && cnum != LOCAL_CRATE && !bundled_libs.is_empty() {
         // If rlib contains native libs as archives, unpack them to tmpdir.
         let rlib = &codegen_results.crate_info.used_crate_source[&cnum].rlib.as_ref().unwrap().0;
@@ -2646,6 +2649,17 @@ fn add_native_libs_from_crate(
         };
 
         let name = lib.name.as_str();
+
+        const UNICOWS_LIBS: &[&str] = &[
+            "kernel32", "advapi32", "user32", "gdi32", "shell32", "comdlg32", "version", "mpr",
+            "rasapi32", "winmm", "winspool", "vfw32", "secur32", "oleacc", "oledlg", "sensapi",
+        ];
+        if is_target_rust9x_x86 && UNICOWS_LIBS.contains(&name) {
+            // skip adding unicows-wrapped libraries in order to properly support adding
+            // `unicows.lib` before them
+            continue;
+        }
+
         let verbatim = lib.verbatim;
         match lib.kind {
             NativeLibKind::Static { bundle, whole_archive } => {
