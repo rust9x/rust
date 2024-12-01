@@ -1455,13 +1455,59 @@ fn metadata(path: &Path, reparse: ReparsePoint) -> io::Result<FileAttr> {
     let mut opts = OpenOptions::new();
     // No read or write permissions are necessary
     opts.access_mode(0);
+
+    #[cfg(not(target_vendor = "rust9x"))]
     opts.custom_flags(c::FILE_FLAG_BACKUP_SEMANTICS | reparse.as_flag());
+    #[cfg(target_vendor = "rust9x")]
+    if crate::sys::compat::checks::is_windows_nt() {
+        opts.custom_flags(c::FILE_FLAG_BACKUP_SEMANTICS | reparse.as_flag());
+    }
 
     // Attempt to open the file normally.
     // If that fails with `ERROR_SHARING_VIOLATION` then retry using `FindFirstFileExW`.
     // If the fallback fails for any reason we return the original error.
     match File::open(path, &opts) {
         Ok(file) => file.file_attr(),
+        #[cfg(target_vendor = "rust9x")]
+        Err(_) if !crate::sys::compat::checks::is_windows_nt() => {
+            let path = maybe_verbatim(path)?;
+            unsafe {
+                // Get at least the attributes in case `FindFirstFile` fails down below
+                let attr = c::GetFileAttributesW(path.as_ptr());
+                if attr == c::INVALID_FILE_ATTRIBUTES {
+                    return Err(crate::io::Error::last_os_error());
+                }
+
+                // Since we don't have access to `FILE_FLAG_BACKUP_SEMANTICS` on 9x/ME, fall back to
+                // `FindFirstFile` for directories
+                let mut find_data: c::WIN32_FIND_DATAW = mem::zeroed();
+                let handle = c::FindFirstFileW(path.as_ptr(), &mut find_data);
+
+                if handle == c::INVALID_HANDLE_VALUE {
+                    // You can't get info about the root directory via FindFirstFile, so in that
+                    // case and any other cases where FindFirstFile fails, fall back to the
+                    // already-retrieved attributes For directories, attributes are the only thing
+                    // we can get on 9x/ME
+                    return Ok(FileAttr {
+                        attributes: attr,
+                        creation_time: mem::zeroed(),
+                        last_access_time: mem::zeroed(),
+                        last_write_time: mem::zeroed(),
+                        change_time: None,
+                        file_size: 0,
+                        reparse_tag: 0,
+                        volume_serial_number: None,
+                        number_of_links: None,
+                        file_index: None,
+                    });
+                }
+
+                let attrs = FileAttr::from(find_data);
+                c::FindClose(handle);
+
+                return Ok(attrs);
+            }
+        }
         Err(e)
             if [Some(c::ERROR_SHARING_VIOLATION as _), Some(c::ERROR_ACCESS_DENIED as _)]
                 .contains(&e.raw_os_error()) =>
@@ -1680,6 +1726,7 @@ pub fn junction_point(original: &Path, link: &Path) -> io::Result<()> {
     }
 }
 
+#[cfg(not(target_vendor = "rust9x"))]
 // Try to see if a file exists but, unlike `exists`, report I/O errors.
 pub fn exists(path: &Path) -> io::Result<bool> {
     // Open the file to ensure any symlinks are followed to their target.
@@ -1710,6 +1757,61 @@ pub fn exists(path: &Path) -> io::Result<bool> {
             // permanent so we report them here.
             _ => Err(e),
         },
+        // The file was opened successfully therefore it must exist,
+        Ok(_) => Ok(true),
+    }
+}
+
+#[cfg(target_vendor = "rust9x")]
+// Try to see if a file exists but, unlike `exists`, report I/O errors.
+pub fn exists(path: &Path) -> io::Result<bool> {
+    fn match_kind(e: crate::io::Error) -> io::Result<bool> {
+        match e.kind() {
+            // The file definitely does not exist
+            io::ErrorKind::NotFound => Ok(false),
+
+            // `ERROR_SHARING_VIOLATION` means that the file has been locked by
+            // another process. This is often temporary so we simply report it
+            // as the file existing.
+            _ if e.raw_os_error() == Some(c::ERROR_SHARING_VIOLATION as i32) => Ok(true),
+
+            // `ERROR_CANT_ACCESS_FILE` means that a file exists but that the
+            // reparse point could not be handled by `CreateFile`.
+            // This can happen for special files such as:
+            // * Unix domain sockets which you need to `connect` to
+            // * App exec links which require using `CreateProcess`
+            _ if e.raw_os_error() == Some(c::ERROR_CANT_ACCESS_FILE as i32) => Ok(true),
+
+            // Other errors such as `ERROR_ACCESS_DENIED` may indicate that the
+            // file exists. However, these types of errors are usually more
+            // permanent so we report them here.
+            _ => Err(e),
+        }
+    }
+
+    // Open the file to ensure any symlinks are followed to their target.
+    let mut opts = OpenOptions::new();
+    // No read, write, etc access rights are needed.
+    opts.access_mode(0);
+
+    if crate::sys::compat::checks::is_windows_nt() {
+        // Backup semantics enables opening directories as well as files.
+        opts.custom_flags(c::FILE_FLAG_BACKUP_SEMANTICS);
+    } else {
+        let path = maybe_verbatim(path)?;
+        let attr = unsafe { c::GetFileAttributesW(path.as_ptr()) };
+        if attr == c::INVALID_FILE_ATTRIBUTES {
+            return match_kind(io::Error::last_os_error());
+        } else {
+            // can't open a directory on 9x/ME anyways
+            if attr & c::FILE_ATTRIBUTE_DIRECTORY != 0 {
+                return Ok(true);
+            }
+        }
+    }
+
+    match File::open(path, &opts) {
+        Err(e) => match_kind(e),
         // The file was opened successfully therefore it must exist,
         Ok(_) => Ok(true),
     }

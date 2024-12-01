@@ -688,3 +688,21 @@ compat_fn_with_fallback! {
         FALSE
     }
 }
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= NT4.0
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findfirstfileexw
+    pub fn FindFirstFileExW(
+        lpfilename: PCWSTR,
+        finfolevelid: FINDEX_INFO_LEVELS,
+        lpfindfiledata: *mut core::ffi::c_void,
+        fsearchop: FINDEX_SEARCH_OPS,
+        lpsearchfilter: *const core::ffi::c_void,
+        dwadditionalflags: FIND_FIRST_EX_FLAGS
+    ) -> HANDLE {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        INVALID_HANDLE_VALUE
+    }
+}
