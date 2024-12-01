@@ -33,6 +33,7 @@ windows_link::link!("kernel32.dll" "system" fn EnterCriticalSection(lpcriticalse
 windows_link::link!("kernel32.dll" "system" fn ExitProcess(uexitcode : u32) -> !);
 windows_link::link!("kernel32.dll" "system" fn FindClose(hfindfile : HANDLE) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn FindFirstFileExW(lpfilename : PCWSTR, finfolevelid : FINDEX_INFO_LEVELS, lpfindfiledata : *mut core::ffi::c_void, fsearchop : FINDEX_SEARCH_OPS, lpsearchfilter : *const core::ffi::c_void, dwadditionalflags : FIND_FIRST_EX_FLAGS) -> HANDLE);
+windows_link::link!("kernel32.dll" "system" fn FindFirstFileW(lpfilename : PCWSTR, lpfindfiledata : *mut WIN32_FIND_DATAW) -> HANDLE);
 windows_link::link!("kernel32.dll" "system" fn FindNextFileW(hfindfile : HANDLE, lpfindfiledata : *mut WIN32_FIND_DATAW) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn FlsAlloc(lpcallback : PFLS_CALLBACK_FUNCTION) -> u32);
 windows_link::link!("kernel32.dll" "system" fn FlsFree(dwflsindex : u32) -> BOOL);
@@ -56,6 +57,7 @@ windows_link::link!("kernel32.dll" "system" fn GetExitCodeProcess(hprocess : HAN
 windows_link::link!("kernel32.dll" "system" fn GetFileAttributesW(lpfilename : PCWSTR) -> u32);
 windows_link::link!("kernel32.dll" "system" fn GetFileInformationByHandle(hfile : HANDLE, lpfileinformation : *mut BY_HANDLE_FILE_INFORMATION) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn GetFileInformationByHandleEx(hfile : HANDLE, fileinformationclass : FILE_INFO_BY_HANDLE_CLASS, lpfileinformation : *mut core::ffi::c_void, dwbuffersize : u32) -> BOOL);
+windows_link::link!("kernel32.dll" "system" fn GetFileSize(hfile : HANDLE, lpfilesize : *mut u64) -> u32);
 windows_link::link!("kernel32.dll" "system" fn GetFileSizeEx(hfile : HANDLE, lpfilesize : *mut i64) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn GetFileType(hfile : HANDLE) -> FILE_TYPE);
 windows_link::link!("kernel32.dll" "system" fn GetFinalPathNameByHandleW(hfile : HANDLE, lpszfilepath : PWSTR, cchfilepath : u32, dwflags : GETFINALPATHNAMEBYHANDLE_FLAGS) -> u32);
@@ -88,6 +90,7 @@ windows_link::link!("kernel32.dll" "system" fn IsThreadAFiber() -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn LeaveCriticalSection(lpcriticalsection : *mut CRITICAL_SECTION));
 windows_link::link!("kernel32.dll" "system" fn LoadLibraryA(lplibfilename : PCSTR) -> HMODULE);
 windows_link::link!("kernel32.dll" "system" fn LocalFree(hmem : HLOCAL) -> HLOCAL);
+windows_link::link!("kernel32.dll" "system" fn LockFile(hfile : HANDLE, dwfileoffsetlow : u32, dwfileoffsethigh : u32, nnumberofbytestolocklow : u32, nnumberofbytestolockhigh : u32) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn LockFileEx(hfile : HANDLE, dwflags : LOCK_FILE_FLAGS, dwreserved : u32, nnumberofbytestolocklow : u32, nnumberofbytestolockhigh : u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn MoveFileExW(lpexistingfilename : PCWSTR, lpnewfilename : PCWSTR, dwflags : MOVE_FILE_FLAGS) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn MultiByteToWideChar(codepage : u32, dwflags : MULTI_BYTE_TO_WIDE_CHAR_FLAGS, lpmultibytestr : PCSTR, cbmultibyte : i32, lpwidecharstr : PWSTR, cchwidechar : i32) -> i32);
@@ -2861,6 +2864,7 @@ impl Default for INIT_ONCE {
 }
 pub const INIT_ONCE_INIT_FAILED: u32 = 4u32;
 pub const INVALID_FILE_ATTRIBUTES: u32 = 4294967295u32;
+pub const INVALID_FILE_SIZE: u32 = 4294967295u32;
 pub const INVALID_SET_FILE_POINTER: u32 = 4294967295u32;
 pub const INVALID_SOCKET: SOCKET = -1i32 as _;
 #[repr(C)]
