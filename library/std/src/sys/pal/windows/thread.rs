@@ -27,13 +27,14 @@ impl Thread {
         // SAFETY: `thread_start` has the right ABI for a thread's entry point.
         // `p` is simply passed through to the new thread without being touched.
         let ret = unsafe {
+            let mut thread_id = 0;
             let ret = c::CreateThread(
                 ptr::null_mut(),
                 stack,
                 Some(thread_start),
                 p as *mut _,
                 c::STACK_SIZE_PARAM_IS_A_RESERVATION,
-                ptr::null_mut(),
+                &mut thread_id,
             );
             HandleOrNull::from_raw_handle(ret)
         };
