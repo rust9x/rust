@@ -204,3 +204,22 @@ pub fn remove_dir_all_iterative(dir: File) -> Result<(), WinError> {
     }
     Ok(())
 }
+
+#[cfg(target_family = "rust9x")]
+pub fn remove_dir_all_recursive_old(path: &crate::path::Path) -> crate::io::Result<()> {
+    use super::*;
+    use crate::sys::path::with_native_path;
+
+    for child in readdir(path)? {
+        let child = child?;
+        let child_type = child.file_type()?;
+        if child_type.is_dir() {
+            remove_dir_all_recursive_old(&child.path())?;
+        } else if child_type.is_symlink_dir() {
+            with_native_path(&child.path(), &rmdir)?;
+        } else {
+            with_native_path(&child.path(), &unlink)?;
+        }
+    }
+    with_native_path(path, &rmdir)
+}
