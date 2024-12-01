@@ -1427,6 +1427,46 @@ pub fn rmdir(p: &WCStr) -> io::Result<()> {
     Ok(())
 }
 
+#[cfg(target_family = "rust9x")]
+pub fn remove_dir_all(p: &Path) -> io::Result<()> {
+    use crate::sys::path::with_native_path;
+
+    with_native_path(p, &|path| {
+        // if the modern file/directory APIs are not available, we'll fall back to the old (unsafe, see
+        // https://github.com/rust-lang/rust/pull/93112) directory removal implementation
+        if !(c::NtOpenFile::available().is_some()
+            && c::GetFileInformationByHandleEx::available().is_some()
+            && c::SetFileInformationByHandle::available().is_some())
+        {
+            let filetype = lstat(path)?.file_type();
+            if filetype.is_symlink() {
+                // On Windows symlinks to files and directories are removed differently.
+                // rmdir only deletes dir symlinks and junctions, not file symlinks.
+                return rmdir(path);
+            } else {
+                return remove_dir_all::remove_dir_all_recursive_old(p);
+            }
+        }
+
+        // Open a file or directory without following symlinks.
+        let mut opts = OpenOptions::new();
+        opts.access_mode(c::FILE_LIST_DIRECTORY);
+        // `FILE_FLAG_BACKUP_SEMANTICS` allows opening directories.
+        // `FILE_FLAG_OPEN_REPARSE_POINT` opens a link instead of its target.
+        opts.custom_flags(c::FILE_FLAG_BACKUP_SEMANTICS | c::FILE_FLAG_OPEN_REPARSE_POINT);
+        let file = File::open_native(path, &opts)?;
+
+        // Test if the file is not a directory or a symlink to a directory.
+        if (file.basic_info()?.FileAttributes & c::FILE_ATTRIBUTE_DIRECTORY) == 0 {
+            return Err(io::Error::from_raw_os_error(c::ERROR_DIRECTORY as _));
+        }
+
+        // Remove the directory and all its contents.
+        remove_dir_all_iterative(file).io_result()
+    })
+}
+
+#[cfg(not(target_family = "rust9x"))]
 pub fn remove_dir_all(path: &WCStr) -> io::Result<()> {
     // Open a file or directory without following symlinks.
     let mut opts = OpenOptions::new();
