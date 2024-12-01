@@ -34,6 +34,7 @@ windows_targets::link!("kernel32.dll" "system" fn EnterCriticalSection(lpcritica
 windows_targets::link!("kernel32.dll" "system" fn ExitProcess(uexitcode : u32) -> !);
 windows_targets::link!("kernel32.dll" "system" fn FindClose(hfindfile : HANDLE) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn FindFirstFileExW(lpfilename : PCWSTR, finfolevelid : FINDEX_INFO_LEVELS, lpfindfiledata : *mut core::ffi::c_void, fsearchop : FINDEX_SEARCH_OPS, lpsearchfilter : *const core::ffi::c_void, dwadditionalflags : FIND_FIRST_EX_FLAGS) -> HANDLE);
+windows_targets::link!("kernel32.dll" "system" fn FindFirstFileW(lpfilename : PCWSTR, lpfindfiledata : *mut WIN32_FIND_DATAW) -> HANDLE);
 windows_targets::link!("kernel32.dll" "system" fn FindNextFileW(hfindfile : HANDLE, lpfindfiledata : *mut WIN32_FIND_DATAW) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn FlushFileBuffers(hfile : HANDLE) -> BOOL);
 windows_targets::link!("kernel32.dll" "system" fn FormatMessageW(dwflags : FORMAT_MESSAGE_OPTIONS, lpsource : *const core::ffi::c_void, dwmessageid : u32, dwlanguageid : u32, lpbuffer : PWSTR, nsize : u32, arguments : *const *const i8) -> u32);

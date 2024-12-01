@@ -2352,6 +2352,7 @@ Windows.Win32.Storage.FileSystem.FindClose
 Windows.Win32.Storage.FileSystem.FindExInfoBasic
 Windows.Win32.Storage.FileSystem.FindExSearchNameMatch
 Windows.Win32.Storage.FileSystem.FindFirstFileExW
+Windows.Win32.Storage.FileSystem.FindFirstFileW
 Windows.Win32.Storage.FileSystem.FindNextFileW
 Windows.Win32.Storage.FileSystem.FlushFileBuffers
 Windows.Win32.Storage.FileSystem.GetFileAttributesW
