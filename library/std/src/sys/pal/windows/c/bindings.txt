@@ -2136,6 +2136,7 @@ FindClose
 FindExInfoBasic
 FindExSearchNameMatch
 FindFirstFileExW
+FindFirstFileW
 FindNextFileW
 FIONBIO
 FlushFileBuffers
@@ -2282,6 +2283,7 @@ LINGER
 listen
 LoadLibraryA
 LocalFree
+LockFile
 LOCKFILE_EXCLUSIVE_LOCK
 LOCKFILE_FAIL_IMMEDIATELY
 LockFileEx
