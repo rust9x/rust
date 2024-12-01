@@ -82,9 +82,9 @@ pub fn remove_dir(path: &Path) -> io::Result<()> {
 
 pub fn remove_dir_all(path: &Path) -> io::Result<()> {
     // FIXME: use with_native_path on all platforms
-    #[cfg(not(windows))]
+    #[cfg(any(not(windows), target_family = "rust9x"))]
     return imp::remove_dir_all(path);
-    #[cfg(windows)]
+    #[cfg(all(windows, not(target_family = "rust9x")))]
     with_native_path(path, &imp::remove_dir_all)
 }
 
