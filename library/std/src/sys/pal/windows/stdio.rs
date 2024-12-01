@@ -175,12 +175,15 @@ fn write_valid_utf8_to_console(handle: c::HANDLE, utf8: &str) -> io::Result<usiz
         // Note that this theoretically checks validity twice in the (most common) case
         // where the underlying byte sequence is valid utf-8 (given the check in `write()`).
         let result = c::MultiByteToWideChar(
-            c::CP_UTF8,                          // CodePage
-            c::MB_ERR_INVALID_CHARS,             // dwFlags
-            utf8.as_ptr(),                       // lpMultiByteStr
-            utf8.len() as i32,                   // cbMultiByte
+            c::CP_UTF8, // CodePage
+            #[cfg(target_vendor = "rust9x")]
+            0, // dwFlags
+            #[cfg(not(target_vendor = "rust9x"))]
+            c::MB_ERR_INVALID_CHARS, // dwFlags
+            utf8.as_ptr(), // lpMultiByteStr
+            utf8.len() as i32, // cbMultiByte
             utf16.as_mut_ptr() as *mut c::WCHAR, // lpWideCharStr
-            utf16.len() as i32,                  // cchWideChar
+            utf16.len() as i32, // cchWideChar
         );
         assert!(result != 0, "Unexpected error in MultiByteToWideChar");
 
@@ -194,6 +197,13 @@ fn write_valid_utf8_to_console(handle: c::HANDLE, utf8: &str) -> io::Result<usiz
     if written == utf16.len() {
         Ok(utf8.len())
     } else {
+        #[cfg(target_vendor = "rust9x")]
+        if !crate::sys::compat::checks::is_windows_nt() {
+            // FIXME: This function should manually convert to the target codepage on 9x/ME, and
+            // handle incomplete writes by calculating how many utf8-effective bytes were written.
+            // For now, we assume that the 8KB buffer is always fully written.
+            return Ok(utf8.len());
+        }
         // Make sure we didn't end up writing only half of a surrogate pair (even though the chance
         // is tiny). Because it is not possible for user code to re-slice `data` in such a way that
         // a missing surrogate can be produced (and also because of the UTF-8 validation above),
