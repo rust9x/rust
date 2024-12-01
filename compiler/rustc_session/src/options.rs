@@ -2929,6 +2929,9 @@ written to standard error output)"),
         "emit runtime checks for Undefined Behavior (default: -Cdebug-assertions)"),
     ui_testing: bool = (false, parse_bool, [UNTRACKED],
         "emit compiler diagnostics in a form suitable for UI testing (default: no)"),
+    unicows: bool = (true, parse_bool, [UNTRACKED],
+        "rust9x: link `unicows` ahead of the native libraries it wraps on 32-bit rust9x targets \
+        (default: yes)"),
     uninit_const_chunk_threshold: usize = (16, parse_number, [TRACKED],
         "allow generating const initializers with mixed init/uninit chunks, \
         and set the maximum number of chunks for which this is allowed (default: 16)"),
