@@ -65,13 +65,16 @@ impl RandomState {
         // iteration order allows a form of DOS attack. To counter that we
         // increment one of the seeds on every RandomState creation, giving
         // every corresponding HashMap a different iteration order.
-        thread_local!(static KEYS: Cell<(u64, u64)> = {
+        thread_local!(static KEYS: Cell<[u8; 16]> = {
             Cell::new(hashmap_random_keys())
         });
 
         KEYS.with(|keys| {
-            let (k0, k1) = keys.get();
-            keys.set((k0.wrapping_add(1), k1));
+            let [n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15] = keys.get();
+            let k0 = u64::from_ne_bytes([n0, n1, n2, n3, n4, n5, n6, n7]);
+            let k1 = u64::from_ne_bytes([n8, n9, n10, n11, n12, n13, n14, n15]);
+            let [n0, n1, n2, n3, n4, n5, n6, n7] = k0.wrapping_add(1).to_ne_bytes();
+            keys.set([n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15]);
             RandomState { k0, k1 }
         })
     }
