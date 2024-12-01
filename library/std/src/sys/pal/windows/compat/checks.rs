@@ -45,9 +45,16 @@ pub fn supports_anon_pipe_autoname() -> bool {
     unsafe { SUPPORTS_ANON_PIPE_AUTONAME }
 }
 
+/// Whether the system supports atomic append. NT 3.51+ support this.
+#[inline(always)]
+pub fn supports_file_atomic_append() -> bool {
+    unsafe { SUPPORTS_FILE_ATOMIC_APPEND }
+}
+
 static mut IS_NT: bool = false;
 static mut SUPPORTS_ASYNC_IO: bool = false;
 static mut SUPPORTS_ANON_PIPE_AUTONAME: bool = false;
+static mut SUPPORTS_FILE_ATOMIC_APPEND: bool = false;
 
 /// On Windows 9x / ME, the byte offset within the TIB (at `fs:[0x18]`) of the pointer to the
 /// current thread's TDBX (thread database extension). This differs between 95/98 and ME.
@@ -81,6 +88,7 @@ fn init_windows_version_check() {
 
         SUPPORTS_ASYNC_IO = IS_NT && c::CancelIo::available().is_some();
         SUPPORTS_ANON_PIPE_AUTONAME = IS_NT && major >= 0x06; // Vista+/NT6+
+        SUPPORTS_FILE_ATOMIC_APPEND = IS_NT && (major >= 4 || (major == 3 && minor >= 51)); // NT 3.51+
 
         #[cfg(target_arch = "x86")]
         if !IS_NT {
