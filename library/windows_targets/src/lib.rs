@@ -34,9 +34,9 @@ pub macro link {
 }
 
 #[cfg(not(feature = "windows_raw_dylib"))]
-#[link(name = "advapi32")]
-#[link(name = "ntdll")]
-#[link(name = "userenv")]
+#[cfg_attr(not(target_vendor = "rust9x"), link(name = "advapi32"))]
+#[cfg_attr(not(target_vendor = "rust9x"), link(name = "ntdll"))]
+#[cfg_attr(not(target_vendor = "rust9x"), link(name = "userenv"))]
 #[link(name = "ws2_32")]
 #[link(name = "dbghelp")] // required for backtrace-rs symbolization
 extern "C" {}
