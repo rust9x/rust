@@ -191,6 +191,7 @@ impl DirEntry {
 }
 
 impl OpenOptions {
+    #[cfg(not(target_family = "rust9x"))]
     pub fn new() -> OpenOptions {
         OpenOptions {
             // generic
@@ -204,6 +205,33 @@ impl OpenOptions {
             custom_flags: 0,
             access_mode: None,
             share_mode: c::FILE_SHARE_READ | c::FILE_SHARE_WRITE | c::FILE_SHARE_DELETE,
+            attributes: 0,
+            security_qos_flags: 0,
+            inherit_handle: false,
+            freeze_last_access_time: false,
+            freeze_last_write_time: false,
+        }
+    }
+
+    #[cfg(target_family = "rust9x")]
+    pub fn new() -> OpenOptions {
+        OpenOptions {
+            // generic
+            read: false,
+            write: false,
+            append: false,
+            truncate: false,
+            create: false,
+            create_new: false,
+            // system-specific
+            custom_flags: 0,
+            access_mode: None,
+            share_mode: if crate::sys::compat::checks::is_windows_nt() {
+                c::FILE_SHARE_READ | c::FILE_SHARE_WRITE | c::FILE_SHARE_DELETE
+            } else {
+                // _DELETE is only supported on NT-based systems.
+                c::FILE_SHARE_READ | c::FILE_SHARE_WRITE
+            },
             attributes: 0,
             security_qos_flags: 0,
             inherit_handle: false,
@@ -258,6 +286,7 @@ impl OpenOptions {
         self.freeze_last_write_time = freeze;
     }
 
+    #[cfg(not(target_family = "rust9x"))]
     fn get_access_mode(&self) -> io::Result<u32> {
         match (self.read, self.write, self.append, self.access_mode) {
             (.., Some(mode)) => Ok(mode),
@@ -282,6 +311,35 @@ impl OpenOptions {
                         "must specify at least one of read, write, or append access",
                     ))
                 }
+            }
+        }
+    }
+
+    #[cfg(target_family = "rust9x")]
+    fn get_access_mode(&self) -> io::Result<u32> {
+        // 9x/ME only supports a limited number of access rights (DELETE, FILE_WRITE_ATTRIBUTES,
+        // GENERIC_READ, and GENERIC_WRITE). This means that we can't use the special append-only
+        // behavior (atomic appends). Additionally, files opened with `append(true)` *will* be able
+        // to seek back and overwrite existing data on these systems.
+        let is_nt = crate::sys::compat::checks::is_windows_nt();
+
+        match (self.read, self.write, self.append, self.access_mode) {
+            (.., Some(mode)) => Ok(mode),
+            (true, false, false, None) => Ok(c::GENERIC_READ),
+            (false, true, false, None) => Ok(c::GENERIC_WRITE),
+            (true, true, false, None) => Ok(c::GENERIC_READ | c::GENERIC_WRITE),
+            (false, _, true, None) => Ok(if is_nt {
+                c::FILE_GENERIC_WRITE & !c::FILE_WRITE_DATA
+            } else {
+                c::GENERIC_WRITE
+            }),
+            (true, _, true, None) => Ok(if is_nt {
+                c::GENERIC_READ | (c::FILE_GENERIC_WRITE & !c::FILE_WRITE_DATA)
+            } else {
+                c::GENERIC_READ | c::GENERIC_WRITE
+            }),
+            (false, false, false, None) => {
+                Err(Error::from_raw_os_error(c::ERROR_INVALID_PARAMETER as i32))
             }
         }
     }
@@ -388,7 +446,17 @@ impl File {
                     .io_result()
                     .or_else(|_| Self::truncate_inner(handle.as_raw_handle(), 0))?;
             }
-            Ok(File { handle: Handle::from_inner(handle) })
+            let file = File { handle: Handle::from_inner(handle) };
+
+            // 9x/ME do not support FILE_APPEND_DATA/FILE_WRITE_DATA, which means that we cannot get
+            // the append-only behaviors: atomic appends, cursor starts at the end of the file. The
+            // latter can be emulated, at least, by just seeking to the end.
+            #[cfg(target_family = "rust9x")]
+            if opts.append && !crate::sys::compat::checks::is_windows_nt() {
+                file.seek(SeekFrom::End(0))?;
+            }
+
+            Ok(file)
         } else {
             Err(Error::last_os_error())
         }
