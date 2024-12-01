@@ -3019,6 +3019,11 @@ fn linker_with_args(
     // and move this option back to the top.
     cmd.add_as_needed();
 
+    // rust9x: `unicows` must be searched before any of the system import libraries it wraps. Emit
+    // it here, ahead of every other native library, including the import libraries generated for
+    // `raw-dylib`. It is emitted a second time after the upstream rlibs, see below.
+    add_unicows(cmd, sess);
+
     // Local native libraries of all kinds.
     add_local_native_libraries(
         cmd,
@@ -3041,6 +3046,11 @@ fn linker_with_args(
         tmpdir,
         link_output_kind,
     );
+
+    // rust9x: the standard library itself calls wrapped Windows APIs, and the rlibs above may
+    // carry bundled import libraries of their own, so make `unicows` available again here, still
+    // ahead of the upstream native libraries and the `raw-dylib` import libraries below.
+    add_unicows(cmd, sess);
 
     // Dynamic native libraries from upstream crates.
     add_upstream_native_libraries(
@@ -3485,6 +3495,21 @@ fn add_native_libs_from_crate(
             }
         }
     }
+}
+
+/// rust9x: link `unicows`, the Microsoft Layer for Unicode, on 32-bit rust9x targets.
+fn add_unicows(cmd: &mut dyn Linker, sess: &Session) {
+    if !sess.opts.unstable_opts.link_native_libraries || !sess.opts.unstable_opts.unicows {
+        return;
+    }
+
+    let is_target_rust9x_x86 = sess.target.families.iter().any(|fam| fam == "rust9x")
+        && sess.target.arch == rustc_target::spec::Arch::X86;
+    if !is_target_rust9x_x86 {
+        return;
+    }
+
+    cmd.link_staticlib_by_name("unicows", false, false);
 }
 
 fn add_local_native_libraries(
