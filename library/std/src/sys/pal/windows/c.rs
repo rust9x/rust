@@ -686,3 +686,21 @@ compat_fn_with_fallback! {
         rtabort!("unimplemented")
     }
 }
+
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= NT
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfileex
+    pub fn LockFileEx(
+        hfile: HANDLE,
+        dwflags: LOCK_FILE_FLAGS,
+        dwreserved: u32,
+        nnumberofbytestolocklow: u32,
+        nnumberofbytestolockhigh: u32,
+        lpoverlapped: *mut OVERLAPPED
+    ) -> BOOL {
+        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
+        FALSE
+    }
+}
