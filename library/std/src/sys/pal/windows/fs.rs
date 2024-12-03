@@ -443,6 +443,15 @@ impl File {
     }
 
     pub fn lock(&self) -> io::Result<()> {
+        #[cfg(target_vendor = "rust9x")]
+        {
+            // try `LockFile`/`try_lock`, as that one is available on 9x/ME
+            if self.try_lock()? {
+                return Ok(());
+            }
+
+            // otherwise just fail the call to `LockFileEx` here
+        }
         self.acquire_lock(c::LOCKFILE_EXCLUSIVE_LOCK)
     }
 
@@ -451,17 +460,8 @@ impl File {
     }
 
     pub fn try_lock(&self) -> io::Result<bool> {
-        let result = cvt(unsafe {
-            let mut overlapped = mem::zeroed();
-            c::LockFileEx(
-                self.handle.as_raw_handle(),
-                c::LOCKFILE_EXCLUSIVE_LOCK | c::LOCKFILE_FAIL_IMMEDIATELY,
-                0,
-                u32::MAX,
-                u32::MAX,
-                &mut overlapped,
-            )
-        });
+        let result =
+            cvt(unsafe { c::LockFile(self.handle.as_raw_handle(), 0, 0, u32::MAX, u32::MAX) });
 
         match result {
             Ok(_) => Ok(true),
