@@ -1,0 +1,49 @@
+# Includes one of the default files in src/bootstrap/defaults
+change-id = 133207
+
+[llvm]
+# Will download LLVM from CI if available on your platform.
+download-ci-llvm = true
+# NOTE: if you set ↑ to false, disable other LLVM targets to save lots of build time!
+# targets = "X86"
+# experimental-targets = ""
+
+[build]
+build = "x86_64-pc-windows-msvc"
+target = [
+    "i586-rust9x-windows-msvc",
+    "i686-rust9x-windows-msvc",
+    "x86_64-rust9x-windows-msvc",
+    "x86_64-pc-windows-msvc",
+]
+
+docs = false
+
+# extended = true
+# tools = [
+#     #    "cargo",
+#     #    "clippy",
+#     "rustdoc",
+#     #    "rustfmt",
+#     #    "rust-analyzer",
+#     #    "rust-analyzer-proc-macro-srv",
+#     #    "analysis",
+#     "src",
+#     #    "wasm-component-ld",
+#     #    "miri", "cargo-miri" # for dev/nightly channels
+# ]
+
+[install]
+# for creating a downloadable package: python x.py install, then create and archive this
+prefix = "../dist/rust9x"
+sysconfdir = "."
+
+[rust]
+dist-src = false
+
+# you can override this with -i/--incremental
+# incremental = false
+# incremental = true
+
+[dist]
+src-tarball = false
