@@ -2365,6 +2365,7 @@ Windows.Win32.Storage.FileSystem.GetFullPathNameW
 Windows.Win32.Storage.FileSystem.GetTempPathW
 Windows.Win32.Storage.FileSystem.INVALID_FILE_ATTRIBUTES
 Windows.Win32.Storage.FileSystem.INVALID_SET_FILE_POINTER
+Windows.Win32.Storage.FileSystem.LockFile
 Windows.Win32.Storage.FileSystem.LOCKFILE_EXCLUSIVE_LOCK
 Windows.Win32.Storage.FileSystem.LOCKFILE_FAIL_IMMEDIATELY
 Windows.Win32.Storage.FileSystem.LockFileEx
