@@ -245,7 +245,7 @@ compat_fn_with_fallback! {
     }
 
     // These functions are available on UWP when lazily loaded. They will fail WACK if loaded statically.
-    #[cfg(any(target_vendor = "uwp", target_vendor = "rust9x"))]
+    #[cfg(target_vendor = "uwp")]
     pub fn NtCreateFile(
         filehandle: *mut HANDLE,
         desiredaccess: FILE_ACCESS_RIGHTS,
