@@ -684,8 +684,7 @@ compat_fn_with_fallback! {
     // >= 98+, NT4.0
     // https://learn.microsoft.com/en-us/windows/win32/api/stringapiset/nf-stringapiset-comparestringordinal
     pub fn CancelIo(hfile: HANDLE) -> BOOL {
-        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
-        FALSE
+        rtabort!("unimplemented")
     }
 }
 
