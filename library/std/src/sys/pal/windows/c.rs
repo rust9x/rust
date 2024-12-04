@@ -202,13 +202,13 @@ compat_fn_with_fallback! {
         addresssize: usize,
         dwmilliseconds: u32
     ) -> BOOL {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     pub fn WakeByAddressSingle(address: *const c_void) {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     pub fn WakeByAddressAll(address: *const c_void) {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
 }
 
@@ -303,7 +303,7 @@ compat_fn_with_fallback! {
         shareaccess: u32,
         openoptions: u32
     ) -> NTSTATUS {
-        STATUS_NOT_IMPLEMENTED
+        rtabort!("unimplemented")
     }
 }
 
@@ -318,33 +318,33 @@ compat_fn_with_fallback! {
         hobjecttowaiton: HANDLE,
         dwmilliseconds: u32,
         balertable: BOOL
-    ) -> WAIT_EVENT { unimplemented!() }
+    ) -> WAIT_EVENT { rtabort!("unimplemented") }
     // >= NT 4
     // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-tryentercriticalsection
     pub fn TryEnterCriticalSection(lpcriticalsection: *mut CRITICAL_SECTION) -> BOOL {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     // >= Win7 / Server 2008 R2
     // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-tryacquiresrwlockexclusive
-    pub fn TryAcquireSRWLockExclusive(srwlock: *mut SRWLOCK) -> BOOLEAN { unimplemented!() }
-    pub fn TryAcquireSRWLockShared(srwlock: *mut SRWLOCK) -> BOOLEAN { unimplemented!() }
+    pub fn TryAcquireSRWLockExclusive(srwlock: *mut SRWLOCK) -> BOOLEAN { rtabort!("unimplemented") }
+    pub fn TryAcquireSRWLockShared(srwlock: *mut SRWLOCK) -> BOOLEAN { rtabort!("unimplemented") }
     // >= Vista / Server 2008
     // https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-acquiresrwlockexclusive
-    pub fn AcquireSRWLockExclusive(srwlock: *mut SRWLOCK) -> () { unimplemented!() }
-    pub fn AcquireSRWLockShared(srwlock: *mut SRWLOCK) -> () { unimplemented!() }
-    pub fn ReleaseSRWLockExclusive(srwlock: *mut SRWLOCK) -> () { unimplemented!() }
-    pub fn ReleaseSRWLockShared(srwlock: *mut SRWLOCK) -> () { unimplemented!() }
+    pub fn AcquireSRWLockExclusive(srwlock: *mut SRWLOCK) -> () { rtabort!("unimplemented") }
+    pub fn AcquireSRWLockShared(srwlock: *mut SRWLOCK) -> () { rtabort!("unimplemented") }
+    pub fn ReleaseSRWLockExclusive(srwlock: *mut SRWLOCK) -> () { rtabort!("unimplemented") }
+    pub fn ReleaseSRWLockShared(srwlock: *mut SRWLOCK) -> () { rtabort!("unimplemented") }
     pub fn SleepConditionVariableSRW(
         conditionvariable: *mut CONDITION_VARIABLE,
         srwlock: *mut SRWLOCK,
         dwmilliseconds: u32,
         flags: u32,
-    ) -> BOOL { unimplemented!() }
+    ) -> BOOL { rtabort!("unimplemented") }
     pub fn WakeAllConditionVariable(conditionvariable: *mut CONDITION_VARIABLE) -> () {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     pub fn WakeConditionVariable(conditionvariable: *mut CONDITION_VARIABLE) -> () {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
 }
 
@@ -482,7 +482,7 @@ compat_fn_with_fallback! {
         cchfilepath: u32,
         dwflags: GETFINALPATHNAMEBYHANDLE_FLAGS
     ) -> u32 {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     // >= 2000
     // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createhardlinkw
@@ -505,7 +505,7 @@ compat_fn_with_fallback! {
         randombuffer: *mut core::ffi::c_void,
         randombufferlength: u32
     ) -> BOOLEAN {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
 
     // >= NT 4.0 / Windows 95 OSR2 / Windows 95 with IE 3.02
@@ -517,13 +517,13 @@ compat_fn_with_fallback! {
         dwprovtype: u32,
         dwflags: u32
     ) -> BOOL {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     pub fn CryptReleaseContext(hprov: usize, dwflags: u32) -> BOOL {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     pub fn CryptGenRandom(hprov: usize, dwlen: u32, pbbuffer: *mut u8) -> BOOL {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
 }
 #[cfg(target_vendor = "rust9x")]
@@ -630,7 +630,7 @@ compat_fn_with_fallback! {
         dwflags: u32,
         lpsize: *mut usize
     ) -> BOOL {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     // >= Vista / Server 2008
     pub fn UpdateProcThreadAttribute(
@@ -642,11 +642,11 @@ compat_fn_with_fallback! {
         lppreviousvalue: *mut core::ffi::c_void,
         lpreturnsize: *const usize
     ) -> BOOL {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
     // >= Vista / Server 2008
     pub fn DeleteProcThreadAttributeList(lpattributelist: LPPROC_THREAD_ATTRIBUTE_LIST) {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
 }
 
@@ -673,7 +673,7 @@ compat_fn_with_fallback! {
         cchcount2: i32,
         bignorecase: BOOL,
     ) -> COMPARESTRING_RESULT {
-        unimplemented!()
+        rtabort!("unimplemented")
     }
 }
 
