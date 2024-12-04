@@ -402,8 +402,7 @@ compat_fn_with_fallback! {
         lpargtocompletionroutine: *const core::ffi::c_void,
         fresume: BOOL
     ) -> BOOL {
-        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
-        FALSE
+        rtabort!("unimplemented")
     }
 }
 
