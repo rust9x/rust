@@ -1260,6 +1260,7 @@ pub fn readdir(p: &Path) -> io::Result<ReadDir> {
         //
         // We can pass FIND_FIRST_EX_LARGE_FETCH to dwAdditionalFlags to speed up things more,
         // but as we don't know user's use profile of this function, lets be conservative.
+        #[cfg(not(target_vendor = "rust9x"))]
         let find_handle = c::FindFirstFileExW(
             path.as_ptr(),
             c::FindExInfoBasic,
@@ -1268,6 +1269,11 @@ pub fn readdir(p: &Path) -> io::Result<ReadDir> {
             ptr::null(),
             0,
         );
+
+        // We take the hit of filling in the alternate file name because both `FindFirstFileExW` and
+        // `FindExInfoBasic` aren't necessarily supported.
+        #[cfg(target_vendor = "rust9x")]
+        let find_handle = c::FindFirstFileW(path.as_ptr(), &mut wfd);
 
         if find_handle != c::INVALID_HANDLE_VALUE {
             Ok(ReadDir {
