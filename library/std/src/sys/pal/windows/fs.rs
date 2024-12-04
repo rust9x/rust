@@ -1335,7 +1335,7 @@ pub fn remove_dir_all(path: &Path) -> io::Result<()> {
     {
         // if the modern file/directory APIs are not available, we'll fall back to the old (unsafe, see
         // https://github.com/rust-lang/rust/pull/93112) directory removal implementation
-        if !(c::NtCreateFile::available().is_some()
+        if !(c::NtOpenFile::available().is_some()
             && c::GetFileInformationByHandleEx::available().is_some()
             && c::SetFileInformationByHandle::available().is_some())
         {
