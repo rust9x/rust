@@ -14,6 +14,8 @@ mod windows_sys;
 pub use windows_sys::*;
 
 #[cfg(target_vendor = "rust9x")]
+pub(crate) mod fileextd;
+#[cfg(target_vendor = "rust9x")]
 pub(crate) mod wspiapi;
 
 pub type WCHAR = u16;
@@ -436,29 +438,6 @@ compat_fn_with_fallback! {
             TRUE
         }
     }
-
-    // >= Vista / Server 2008 (XP / Server 2003 when linking a supported FileExtd.lib)
-    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle
-    pub fn SetFileInformationByHandle(
-        hfile: HANDLE,
-        fileinformationclass: FILE_INFO_BY_HANDLE_CLASS,
-        lpfileinformation: *const ::core::ffi::c_void,
-        dwbuffersize: u32,
-    ) -> BOOL {
-        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
-        FALSE
-    }
-    // >= Vista / Server 2008 (XP / Server 2003 when linking a supported FileExtd.lib)
-    // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getfileinformationbyhandleex
-    pub fn GetFileInformationByHandleEx(
-        hfile: HANDLE,
-        fileinformationclass: FILE_INFO_BY_HANDLE_CLASS,
-        lpfileinformation: *mut ::core::ffi::c_void,
-        dwbuffersize: u32,
-    ) -> BOOL {
-        unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
-        FALSE
-    }
 }
 
 #[cfg(target_vendor = "rust9x")]
@@ -702,5 +681,53 @@ compat_fn_with_fallback! {
     ) -> BOOL {
         unsafe { SetLastError(ERROR_CALL_NOT_IMPLEMENTED as u32); };
         FALSE
+    }
+}
+
+#[cfg(target_vendor = "rust9x")]
+pub(crate) use fileextd::{
+    get_file_information_by_handle_ex as GetFileInformationByHandleEx,
+    set_file_information_by_handle as SetFileInformationByHandle,
+};
+#[cfg(target_vendor = "rust9x")]
+compat_fn_with_fallback! {
+    pub static NTDLL: &CStr = c"ntdll" => { load: true, unicows: false };
+    // all NT only
+    fn NtQueryDirectoryFile(
+        filehandle: HANDLE,
+        event: HANDLE,
+        apcroutine: PIO_APC_ROUTINE,
+        apccontext: *const core::ffi::c_void,
+        iostatusblock: *mut IO_STATUS_BLOCK,
+        fileinformation: *mut core::ffi::c_void,
+        length: u32,
+        fileinformationclass: FILE_INFORMATION_CLASS,
+        returnsingleentry: BOOLEAN,
+        filename: *const UNICODE_STRING,
+        restartscan: BOOLEAN
+    ) -> NTSTATUS {
+        rtabort!("unimplemented")
+    }
+    fn NtQueryInformationFile(filehandle: HANDLE,
+        iostatusblock: *mut IO_STATUS_BLOCK,
+        fileinformation: *mut core::ffi::c_void,
+        length: u32,
+        fileinformationclass: FILE_INFORMATION_CLASS
+    ) -> NTSTATUS {
+        rtabort!("unimplemented")
+    }
+    fn NtSetInformationFile(filehandle: HANDLE,
+        iostatusblock: *mut IO_STATUS_BLOCK,
+        fileinformation: *const core::ffi::c_void,
+        length: u32,
+        fileinformationclass: FILE_INFORMATION_CLASS
+    ) -> NTSTATUS {
+        rtabort!("unimplemented")
+    }
+    fn NtWaitForSingleObject(handle: HANDLE,
+        alertable: BOOLEAN,
+        timeout: *mut i64
+    ) -> NTSTATUS {
+        rtabort!("unimplemented")
     }
 }

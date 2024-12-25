@@ -132,7 +132,11 @@ windows_targets::link!("kernel32.dll" "system" fn WriteFile(hfile : HANDLE, lpbu
 windows_targets::link!("kernel32.dll" "system" fn WriteFileEx(hfile : HANDLE, lpbuffer : *const u8, nnumberofbytestowrite : u32, lpoverlapped : *mut OVERLAPPED, lpcompletionroutine : LPOVERLAPPED_COMPLETION_ROUTINE) -> BOOL);
 windows_targets::link!("ntdll.dll" "system" fn NtCreateFile(filehandle : *mut HANDLE, desiredaccess : FILE_ACCESS_RIGHTS, objectattributes : *const OBJECT_ATTRIBUTES, iostatusblock : *mut IO_STATUS_BLOCK, allocationsize : *const i64, fileattributes : FILE_FLAGS_AND_ATTRIBUTES, shareaccess : FILE_SHARE_MODE, createdisposition : NTCREATEFILE_CREATE_DISPOSITION, createoptions : NTCREATEFILE_CREATE_OPTIONS, eabuffer : *const core::ffi::c_void, ealength : u32) -> NTSTATUS);
 windows_targets::link!("ntdll.dll" "system" fn NtOpenFile(filehandle : *mut HANDLE, desiredaccess : u32, objectattributes : *const OBJECT_ATTRIBUTES, iostatusblock : *mut IO_STATUS_BLOCK, shareaccess : u32, openoptions : u32) -> NTSTATUS);
+windows_targets::link!("ntdll.dll" "system" fn NtQueryDirectoryFile(filehandle : HANDLE, event : HANDLE, apcroutine : PIO_APC_ROUTINE, apccontext : *const core::ffi::c_void, iostatusblock : *mut IO_STATUS_BLOCK, fileinformation : *mut core::ffi::c_void, length : u32, fileinformationclass : FILE_INFORMATION_CLASS, returnsingleentry : BOOLEAN, filename : *const UNICODE_STRING, restartscan : BOOLEAN) -> NTSTATUS);
+windows_targets::link!("ntdll.dll" "system" fn NtQueryInformationFile(filehandle : HANDLE, iostatusblock : *mut IO_STATUS_BLOCK, fileinformation : *mut core::ffi::c_void, length : u32, fileinformationclass : FILE_INFORMATION_CLASS) -> NTSTATUS);
 windows_targets::link!("ntdll.dll" "system" fn NtReadFile(filehandle : HANDLE, event : HANDLE, apcroutine : PIO_APC_ROUTINE, apccontext : *const core::ffi::c_void, iostatusblock : *mut IO_STATUS_BLOCK, buffer : *mut core::ffi::c_void, length : u32, byteoffset : *const i64, key : *const u32) -> NTSTATUS);
+windows_targets::link!("ntdll.dll" "system" fn NtSetInformationFile(filehandle : HANDLE, iostatusblock : *mut IO_STATUS_BLOCK, fileinformation : *const core::ffi::c_void, length : u32, fileinformationclass : FILE_INFORMATION_CLASS) -> NTSTATUS);
+windows_targets::link!("ntdll.dll" "system" fn NtWaitForSingleObject(handle : HANDLE, alertable : BOOLEAN, timeout : *mut i64) -> NTSTATUS);
 windows_targets::link!("ntdll.dll" "system" fn NtWriteFile(filehandle : HANDLE, event : HANDLE, apcroutine : PIO_APC_ROUTINE, apccontext : *const core::ffi::c_void, iostatusblock : *mut IO_STATUS_BLOCK, buffer : *const core::ffi::c_void, length : u32, byteoffset : *const i64, key : *const u32) -> NTSTATUS);
 windows_targets::link!("ntdll.dll" "system" fn RtlNtStatusToDosError(status : NTSTATUS) -> u32);
 windows_targets::link!("userenv.dll" "system" fn GetUserProfileDirectoryW(htoken : HANDLE, lpprofiledir : PWSTR, lpcchsize : *mut u32) -> BOOL);
@@ -2477,6 +2481,22 @@ pub const FILE_FLAG_RANDOM_ACCESS: FILE_FLAGS_AND_ATTRIBUTES = 268435456u32;
 pub const FILE_FLAG_SEQUENTIAL_SCAN: FILE_FLAGS_AND_ATTRIBUTES = 134217728u32;
 pub const FILE_FLAG_SESSION_AWARE: FILE_FLAGS_AND_ATTRIBUTES = 8388608u32;
 pub const FILE_FLAG_WRITE_THROUGH: FILE_FLAGS_AND_ATTRIBUTES = 2147483648u32;
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct FILE_FULL_DIR_INFO {
+    pub NextEntryOffset: u32,
+    pub FileIndex: u32,
+    pub CreationTime: i64,
+    pub LastAccessTime: i64,
+    pub LastWriteTime: i64,
+    pub ChangeTime: i64,
+    pub EndOfFile: i64,
+    pub AllocationSize: i64,
+    pub FileAttributes: u32,
+    pub FileNameLength: u32,
+    pub EaSize: u32,
+    pub FileName: [u16; 1],
+}
 pub const FILE_GENERIC_EXECUTE: FILE_ACCESS_RIGHTS = 1179808u32;
 pub const FILE_GENERIC_READ: FILE_ACCESS_RIGHTS = 1179785u32;
 pub const FILE_GENERIC_WRITE: FILE_ACCESS_RIGHTS = 1179926u32;
@@ -2499,6 +2519,7 @@ pub struct FILE_ID_BOTH_DIR_INFO {
     pub FileId: i64,
     pub FileName: [u16; 1],
 }
+pub type FILE_INFORMATION_CLASS = i32;
 pub type FILE_INFO_BY_HANDLE_CLASS = i32;
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -2506,6 +2527,12 @@ pub struct FILE_IO_PRIORITY_HINT_INFO {
     pub PriorityHint: PRIORITY_HINT,
 }
 pub const FILE_LIST_DIRECTORY: FILE_ACCESS_RIGHTS = 1u32;
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct FILE_NAME_INFO {
+    pub FileNameLength: u32,
+    pub FileName: [u16; 1],
+}
 pub const FILE_NAME_NORMALIZED: GETFINALPATHNAMEBYHANDLE_FLAGS = 0u32;
 pub const FILE_NAME_OPENED: GETFINALPATHNAMEBYHANDLE_FLAGS = 8u32;
 pub const FILE_NON_DIRECTORY_FILE: NTCREATEFILE_CREATE_OPTIONS = 64u32;
@@ -2602,13 +2629,19 @@ pub const FSCTL_SET_REPARSE_POINT: u32 = 589988u32;
 pub const FileAlignmentInfo: FILE_INFO_BY_HANDLE_CLASS = 17i32;
 pub const FileAllocationInfo: FILE_INFO_BY_HANDLE_CLASS = 5i32;
 pub const FileAttributeTagInfo: FILE_INFO_BY_HANDLE_CLASS = 9i32;
+pub const FileAttributeTagInformation: FILE_INFORMATION_CLASS = 35i32;
 pub const FileBasicInfo: FILE_INFO_BY_HANDLE_CLASS = 0i32;
+pub const FileBasicInformation: FILE_INFORMATION_CLASS = 4i32;
 pub const FileCaseSensitiveInfo: FILE_INFO_BY_HANDLE_CLASS = 23i32;
 pub const FileCompressionInfo: FILE_INFO_BY_HANDLE_CLASS = 8i32;
 pub const FileDispositionInfo: FILE_INFO_BY_HANDLE_CLASS = 4i32;
 pub const FileDispositionInfoEx: FILE_INFO_BY_HANDLE_CLASS = 21i32;
+pub const FileDispositionInformation: FILE_INFORMATION_CLASS = 13i32;
+pub const FileDispositionInformationEx: FILE_INFORMATION_CLASS = 64i32;
 pub const FileEndOfFileInfo: FILE_INFO_BY_HANDLE_CLASS = 6i32;
+pub const FileEndOfFileInformation: FILE_INFORMATION_CLASS = 20i32;
 pub const FileFullDirectoryInfo: FILE_INFO_BY_HANDLE_CLASS = 14i32;
+pub const FileFullDirectoryInformation: FILE_INFORMATION_CLASS = 2i32;
 pub const FileFullDirectoryRestartInfo: FILE_INFO_BY_HANDLE_CLASS = 15i32;
 pub const FileIdBothDirectoryInfo: FILE_INFO_BY_HANDLE_CLASS = 10i32;
 pub const FileIdBothDirectoryRestartInfo: FILE_INFO_BY_HANDLE_CLASS = 11i32;
@@ -2617,6 +2650,7 @@ pub const FileIdExtdDirectoryRestartInfo: FILE_INFO_BY_HANDLE_CLASS = 20i32;
 pub const FileIdInfo: FILE_INFO_BY_HANDLE_CLASS = 18i32;
 pub const FileIoPriorityHintInfo: FILE_INFO_BY_HANDLE_CLASS = 12i32;
 pub const FileNameInfo: FILE_INFO_BY_HANDLE_CLASS = 2i32;
+pub const FileNameInformation: FILE_INFORMATION_CLASS = 9i32;
 pub const FileNormalizedNameInfo: FILE_INFO_BY_HANDLE_CLASS = 24i32;
 pub const FileRemoteProtocolInfo: FILE_INFO_BY_HANDLE_CLASS = 13i32;
 pub const FileRenameInfo: FILE_INFO_BY_HANDLE_CLASS = 3i32;
