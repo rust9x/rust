@@ -125,10 +125,11 @@ fn msys_tty_on(handle: BorrowedHandle<'_>) -> bool {
     // Safety: buffer length is fixed.
     let res = unsafe {
         #[cfg(target_vendor = "rust9x")]
-        let Some(fun) = c::GetFileInformationByHandleEx::available() else { return false };
-        #[cfg(not(target_vendor = "rust9x"))]
-        let fun = c::GetFileInformationByHandleEx;
-        fun(
+        if !crate::sys::compat::checks::is_windows_nt() {
+            return false;
+        }
+
+        c::GetFileInformationByHandleEx(
             handle.as_raw_handle(),
             c::FileNameInfo,
             (&raw mut name_info) as *mut c_void,
