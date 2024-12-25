@@ -591,7 +591,7 @@ impl File {
 
     #[cfg(target_family = "rust9x")]
     pub fn truncate_inner(handle: RawHandle, size: u64) -> io::Result<()> {
-        if c::SetFileInformationByHandle::available().is_some() {
+        if crate::sys::compat::checks::is_windows_nt() {
             let info = c::FILE_END_OF_FILE_INFO { EndOfFile: size as i64 };
             api::set_file_information_by_handle(handle, &info).io_result()
         } else {
@@ -620,22 +620,20 @@ impl File {
             cvt(c::GetFileInformationByHandle(self.handle.as_raw_handle(), &mut info))?;
             let mut reparse_tag = 0;
             if info.dwFileAttributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-                #[cfg(target_family = "rust9x")]
-                let f = c::GetFileInformationByHandleEx::available();
-                #[cfg(not(target_family = "rust9x"))]
-                let f = Some(c::GetFileInformationByHandleEx);
+                let mut attr_tag: c::FILE_ATTRIBUTE_TAG_INFO = mem::zeroed();
+                // rust9x: If a reparse point attribute is returned, we must be on NT-based Windows
+                // with support for FileAttributeTagInformation, so our
+                // fallback implementation of `GetFileInformationByHandleEx` will work without
+                // further checks.
 
-                if let Some(f) = f {
-                    let mut attr_tag: c::FILE_ATTRIBUTE_TAG_INFO = mem::zeroed();
-                    cvt(f(
-                        self.handle.as_raw_handle(),
-                        c::FileAttributeTagInfo,
-                        (&raw mut attr_tag).cast(),
-                        size_of::<c::FILE_ATTRIBUTE_TAG_INFO>().try_into().unwrap(),
-                    ))?;
-                    if attr_tag.FileAttributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-                        reparse_tag = attr_tag.ReparseTag;
-                    }
+                cvt(c::GetFileInformationByHandleEx(
+                    self.handle.as_raw_handle(),
+                    c::FileAttributeTagInfo,
+                    (&raw mut attr_tag).cast(),
+                    mem::size_of::<c::FILE_ATTRIBUTE_TAG_INFO>().try_into().unwrap(),
+                ))?;
+                if attr_tag.FileAttributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+                    reparse_tag = attr_tag.ReparseTag;
                 }
             }
             Ok(FileAttr {
@@ -988,6 +986,10 @@ impl File {
     /// you will always iterate an empty directory regardless of the target.
     #[allow(unused)]
     fn fill_dir_buff(&self, buffer: &mut DirBuff, restart: bool) -> Result<bool, WinError> {
+        #[cfg(target_family = "rust9x")]
+        let class =
+            if restart { c::FileFullDirectoryRestartInfo } else { c::FileFullDirectoryInfo };
+        #[cfg(not(target_family = "rust9x"))]
         let class =
             if restart { c::FileIdBothDirectoryRestartInfo } else { c::FileIdBothDirectoryInfo };
 
@@ -1064,6 +1066,9 @@ impl<'a> Iterator for DirBuffIter<'a> {
         //   `FILE_ID_BOTH_DIR_INFO` and the trailing filename (for at least
         //   `FileNameLength` bytes)
         let (name, is_directory, next_entry) = unsafe {
+            #[cfg(target_family = "rust9x")]
+            let info = buffer.as_ptr().cast::<c::FILE_FULL_DIR_INFO>();
+            #[cfg(not(target_family = "rust9x"))]
             let info = buffer.as_ptr().cast::<c::FILE_ID_BOTH_DIR_INFO>();
             // While this is guaranteed to be aligned in documentation for
             // https://docs.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_both_dir_info
@@ -1513,12 +1518,10 @@ pub fn remove_dir_all(p: &Path) -> io::Result<()> {
     use crate::sys::path::with_native_path;
 
     with_native_path(p, &|path| {
-        // if the modern file/directory APIs are not available, we'll fall back to the old (unsafe, see
-        // https://github.com/rust-lang/rust/pull/93112) directory removal implementation
-        if !(c::NtOpenFile::available().is_some()
-            && c::GetFileInformationByHandleEx::available().is_some()
-            && c::SetFileInformationByHandle::available().is_some())
-        {
+        // if the modern file/directory APIs are not available (9x/Me), we'll fall back to the old
+        // (unsafe, see https://github.com/rust-lang/rust/pull/93112) directory removal
+        // implementation
+        if !crate::sys::compat::checks::is_windows_nt() {
             let filetype = lstat(path)?.file_type();
             if filetype.is_symlink() {
                 // On Windows symlinks to files and directories are removed differently.
