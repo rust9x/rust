@@ -1,7 +1,7 @@
 use crate::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
 use crate::pin::Pin;
 use crate::sys::c;
-use crate::sys::compat::checks::{MutexKind, mutex_kind};
+use crate::sys::compat::checks::{MutexKind, is_windows_nt, mutex_kind};
 use crate::sys::pal::{cvt, dur2timeout};
 use crate::sys::sync::{Mutex, OnceBox};
 use crate::time::Duration;
@@ -45,7 +45,7 @@ impl Condvar {
     #[inline]
     pub unsafe fn wait(&self, mutex: &Mutex) {
         let event = self.inner.get_or_init(Self::init);
-        let use_signal_object_and_wait = if mutex_kind() == MutexKind::Legacy {
+        let use_signal_object_and_wait = if mutex_kind() == MutexKind::Legacy && is_windows_nt() {
             c::SignalObjectAndWait::available()
         } else {
             None
@@ -76,7 +76,7 @@ impl Condvar {
 
     pub unsafe fn wait_timeout(&self, mutex: &Mutex, dur: Duration) -> bool {
         let event = self.inner.get_or_init(Self::init);
-        let use_signal_object_and_wait = if mutex_kind() == MutexKind::Legacy {
+        let use_signal_object_and_wait = if mutex_kind() == MutexKind::Legacy && is_windows_nt() {
             c::SignalObjectAndWait::available()
         } else {
             None
