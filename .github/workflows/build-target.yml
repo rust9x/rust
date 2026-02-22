@@ -1,0 +1,88 @@
+# This workflow will build the current toolchain automatically, and 
+# push it into release.
+# 
+# It will also built-in an install script, which can scan it as a rustup toolchain, so
+# that we can manage them easily.
+#
+# If we can, we will add multiple platform support (e.g. Windows, macOS, Linux)
+# so that you can do cross-compile by using this toolchain.
+# 
+# Workflow file by "zhangxuan2011 <zx20110412@outlook.com>"
+
+name: Build Target Toolchain
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows, x86_64
+          - os: windows-latest
+            arch: x64
+            target: x86_64-pc-windows-msvc
+            target_short: x86_64-windows
+          
+          # Windows, i686
+          - os: windows-latest
+            arch: x86
+            target: i686-pc-windows-msvc
+            target_short: i686-windows
+
+          # Windows, i586
+          - os: windows-latest
+            arch: x86
+            target: i586-pc-windows-msvc
+            target_short: i586-windows
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install NASM
+        run: choco install nasm -y
+
+      - name: Activate MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
+      - name: Build toolchain
+        run: |
+          python x.py install --config bootstrap.rust9x.toml
+          if %errorlevel% neq 0 exit /b 1
+
+      - name: Pack toolchain
+        run: |
+          set VERSION=${{ github.ref_name }}
+          set ARCHIVE_NAME=rust9x-toolchain-%VERSION%-${{ matrix.target_short }}.tar.gz
+
+          :: Check build folder
+          if not exist "build" (
+              echo Error: build directory not found
+              exit /b 1
+          )
+
+          :: Pack everything inside build
+          tar -czvf "%ARCHIVE_NAME%" -C dist/rust9x
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: rust9x-toolchain-*.tar.gz
