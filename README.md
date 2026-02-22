@@ -6,53 +6,82 @@
          src="https://raw.githubusercontent.com/rust-lang/www.rust-lang.org/master/static/images/rust-social-wide-light.svg"
          width="50%">
   </picture>
-
-[Website][Rust] | [Getting started] | [Learn] | [Documentation] | [Contributing]
 </div>
 
-This is the main source code repository for [Rust]. It contains the compiler,
+This is the main source code repository for [Rust9x]. It contains the compiler,
 standard library, and documentation.
 
-[Rust]: https://www.rust-lang.org/
-[Getting Started]: https://www.rust-lang.org/learn/get-started
-[Learn]: https://www.rust-lang.org/learn
-[Documentation]: https://www.rust-lang.org/learn#learn-use
-[Contributing]: CONTRIBUTING.md
+Note that this project can not only used on Windows 10 and 11, but also on Windows 7, XP, even 
+Windows 2000, 98 and 95
 
-## Why Rust?
+# Links
 
-- **Performance:** Fast and memory-efficient, suitable for critical services, embedded devices, and easily integrated with other languages.
-
-- **Reliability:** Our rich type system and ownership model ensure memory and thread safety, reducing bugs at compile-time.
-
-- **Productivity:** Comprehensive documentation, a compiler committed to providing great diagnostics, and advanced tooling including package manager and build tool ([Cargo]), auto-formatter ([rustfmt]), linter ([Clippy]) and editor support ([rust-analyzer]).
+## Official
 
 [Cargo]: https://github.com/rust-lang/cargo
 [rustfmt]: https://github.com/rust-lang/rustfmt
 [Clippy]: https://github.com/rust-lang/rust-clippy
 [rust-analyzer]: https://github.com/rust-lang/rust-analyzer
 
-## Quick Start
+## Rust9x
+[Wiki]: https://github.com/rust9x/rust/wiki
 
-Read ["Installation"] from [The Book].
+# Build
 
-["Installation"]: https://doc.rust-lang.org/book/ch01-01-installation.html
-[The Book]: https://doc.rust-lang.org/book/index.html
+If you want to build this source by yourself, you can follow [this instructions](https://github.com/rust9x/rust/wiki#installation) and set up your target.
 
-## Installing from Source
+# Install
 
-If you really want to install from source (though this is not recommended), see
-[INSTALL.md](INSTALL.md).
+If you think build this source is so sucks, perhaps you can follow this:
 
-## Getting Help
+1. Download the latest release
 
-See https://www.rust-lang.org/community for a list of chat platforms and forums.
+View [here](https://github.com/zhangxuan/rust9x/releases/latest) and choose the best platform for you.
 
-## Contributing
+If you don't know how to choose, you can click [here](#choose-the-platform)
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+## Choose the platform
 
-## License
+When you visited the release page, you might see these assets:
+- `rust9x-toolchain-<version>-x86_64-windows.tar.gz`
+- `rust9x-toolchain-<version>-i686-windows.tar.gz`
+- `rust9x-toolchain-<version>-i586-windows.tar.gz`
+
+For each assets has its own platform, you can choose the one that fits the target system.
+
+### x86_64 Windows
+
+File name: `rust9x-toolchain-<version>-x86_64-windows.tar.gz`
+
+Support targets:
+- Windows 10 and 11
+- x86_64 systems (simply called "64-bit systems")
+
+### i686 Windows
+
+File name: `rust9x-toolchain-<version>-i686-windows.tar.gz`
+
+Support targets:
+- Windows 7 and XP
+- i686 systems (simply called "32-bit systems")
+
+### i586 Windows
+
+File name: `rust9x-toolchain-<version>-i586-windows.tar.gz`
+
+Support targets:
+- Windows 2000, Windows 9x and older
+- i586 systems (simply called "16-bit systems")
+
+For more information, please visit [here](https://github.com/rust9x/rust/wiki#installation)
+
+# Contributing
+
+Thanks for your interest in contributing to this project!
+
+If you want to know more, perhaps you can see [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+
+# License
 
 Rust is primarily distributed under the terms of both the MIT license and the
 Apache License (Version 2.0), with portions covered by various BSD-like
@@ -61,7 +90,11 @@ licenses.
 See [LICENSE-APACHE](LICENSE-APACHE), [LICENSE-MIT](LICENSE-MIT), and
 [COPYRIGHT](COPYRIGHT) for details.
 
-## Trademark
+# The Rust Code of Conduct
+
+The Code of Conduct for this repository can be found [here](https://www.rust-lang.org/conduct.html).
+
+# Trademark
 
 [The Rust Foundation][rust-foundation] owns and protects the Rust and Cargo
 trademarks and logos (the "Rust Trademarks").
