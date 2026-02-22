@@ -55,6 +55,9 @@ jobs:
           fetch-depth: 0
           submodules: false
 
+      - name: Set up upstream
+        run: git remote add upstream https://github.com/rust-lang/rust.git
+
       - name: Install NASM
         run: choco install nasm -y
 
