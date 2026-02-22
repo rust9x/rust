@@ -20,6 +20,9 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -67,8 +70,15 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Build toolchain
+        env:
+          # If this env exists, the commit hash is wrong and just return 404.
+          GITHUB_ACTIONS: 
         run: |
-          python x.py install --config bootstrap.rust9x.toml
+          :: Avoid failed to unset
+          set GITHUB_ACTIONS=
+
+          :: Build & install in dist/rust9x
+          python x.py install --config bootstrap.rust9x.toml --stage 2
           if %errorlevel% neq 0 exit /b 1
 
       - name: Pack toolchain
