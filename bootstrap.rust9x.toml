@@ -25,7 +25,8 @@ docs = false
 extended = true
 tools = [
     "cargo",
-    "rustfmt"
+    "rustfmt",
+    "src"
 ]
 
 [install]
