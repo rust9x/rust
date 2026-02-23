@@ -18,6 +18,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "The version to release, which must start with `v`"
+        required: true
+        default: "v1.93.0-rust9x"
 
 permissions:
   contents: write
@@ -95,3 +100,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: rust9x-toolchain-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
