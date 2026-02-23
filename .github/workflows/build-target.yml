@@ -86,14 +86,8 @@ jobs:
           set VERSION=${{ github.ref_name }}
           set ARCHIVE_NAME=rust9x-toolchain-%VERSION%-${{ matrix.target_short }}.tar.gz
 
-          :: Check build folder
-          if not exist "build" (
-              echo Error: build directory not found
-              exit /b 1
-          )
-
           :: Pack everything inside build
-          tar -czvf "%ARCHIVE_NAME%" -C dist/rust9x
+          tar -czvf "%ARCHIVE_NAME%" -C dist/rust9x .
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
