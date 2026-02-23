@@ -9,7 +9,9 @@
 # 
 # Workflow file by "zhangxuan2011 <zx20110412@outlook.com>"
 
-name: Build Target Toolchain
+---
+
+name: Build Rust9x Toolchain
 
 on:
   push:
