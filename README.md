@@ -8,23 +8,23 @@
   </picture>
 </div>
 
-This is the main source code repository for [Rust9x]. It contains the compiler,
+This is the source code repository for [Rust9x]. It contains the compiler,
 standard library, and documentation.
 
 Note that this project can not only used on Windows 10 and 11, but also on Windows 7, XP, even 
 Windows 2000, 98 and 95
 
+---
+
 # Links
+**Cargo**: https://github.com/rust-lang/cargo
+**rustfmt**: https://github.com/rust-lang/rustfmt
+**Clippy**: https://github.com/rust-lang/rust-clippy
+**rust-analyzer**: https://github.com/rust-lang/rust-analyzer
+**Rust9x**: https://github.com/rust9x/rust/wiki
 
-## Official
 
-[Cargo]: https://github.com/rust-lang/cargo
-[rustfmt]: https://github.com/rust-lang/rustfmt
-[Clippy]: https://github.com/rust-lang/rust-clippy
-[rust-analyzer]: https://github.com/rust-lang/rust-analyzer
-
-## Rust9x
-[Wiki]: https://github.com/rust9x/rust/wiki
+[Rust9x]: https://github.com/rust9x/rust/wiki
 
 # Build
 
@@ -73,7 +73,7 @@ Support targets:
 - Windows 2000, Windows 9x and older
 - i586 systems (simply called "16-bit systems")
 
-For more information, please visit [here](https://github.com/rust9x/rust/wiki#installation)
+For more information, please visit [the rust9x installation guide](https://github.com/rust9x/rust/wiki#installation) for further information.
 
 # Contributing
 
