@@ -17,6 +17,7 @@ target = [
     "x86_64-rust9x-windows-msvc",
     "x86_64-pc-windows-msvc",
 ]
+
 # The docs is unnessary to build, because it's as same as the official one
 docs = false
 
@@ -24,8 +25,7 @@ docs = false
 extended = true
 tools = [
     "cargo",
-    "rustdoc",
-    "src",
+    "rustfmt"
 ]
 
 [install]
@@ -37,6 +37,7 @@ sysconfdir = "."
 # enable rust-lld.exe so we don't need editbin.exe
 lld = true
 dist-src = false
+llvm-tools = false
 
 # you can override this with -i/--incremental
 # incremental = false
