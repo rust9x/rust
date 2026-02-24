@@ -49,12 +49,6 @@ jobs:
             target: i686-pc-windows-msvc
             target_short: i686-windows
 
-          # Windows, i586
-          - os: windows-latest
-            arch: x86
-            target: i586-pc-windows-msvc
-            target_short: i586-windows
-
     defaults:
       run:
         shell: cmd
@@ -64,12 +58,6 @@ jobs:
         with:
           fetch-depth: 0
           submodules: false
-
-      - name: Set up upstream
-        run: git remote add upstream https://github.com/rust-lang/rust.git
-
-      - name: Install NASM
-        run: choco install nasm -y
 
       - name: Activate MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
