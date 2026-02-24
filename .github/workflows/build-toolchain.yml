@@ -44,10 +44,10 @@ jobs:
             target_short: x86_64-windows
           
           # Windows, i686
-          - os: windows-latest
-            arch: x64
-            target: i686-pc-windows-msvc
-            target_short: i686-windows
+          # - os: windows-latest
+          #   arch: x64
+          #   target: i686-pc-windows-msvc
+          #   target_short: i686-windows
 
     defaults:
       run:
