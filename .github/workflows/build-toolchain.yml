@@ -45,7 +45,7 @@ jobs:
           
           # Windows, i686
           - os: windows-latest
-            arch: x86
+            arch: x64
             target: i686-pc-windows-msvc
             target_short: i686-windows
 
