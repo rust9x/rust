@@ -73,7 +73,7 @@ jobs:
           set GITHUB_ACTIONS=
 
           :: Build & install in dist/rust9x
-          python x.py install --config bootstrap.rust9x.toml --set build.host=["${{ matrix.target }}"] --stage 2
+          python x.py install --config bootstrap.rust9x.toml --set build.host=[\"${{ matrix.target }}\"] --stage 2
           if %errorlevel% neq 0 exit /b 1
 
       - name: Pack toolchain
