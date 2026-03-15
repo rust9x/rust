@@ -8,6 +8,7 @@ use crate::sys::pal::winsock::{self, cvt};
 pub fn hostname() -> Result<OsString> {
     winsock::startup();
 
+    // TODO: Remove this fallback once https://github.com/rust-lang/rust/pull/150909 made it in
     #[cfg(target_family = "rust9x")]
     if c::GetHostNameW::available().is_none() {
         use core::ffi::CStr;
