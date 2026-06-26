@@ -38,8 +38,11 @@ const STAGE0_MISSING_TARGETS: &[&str] = &[
     // just a dummy comment so the list doesn't get onelined
     "i486-rust9x-windows-msvc",
     "i586-rust9x-windows-msvc",
+    "i586-rust9x-windows-gnu",
     "i686-rust9x-windows-msvc",
+    "i686-rust9x-windows-gnu",
     "x86_64-rust9x-windows-msvc",
+    "x86_64-rust9x-windows-gnu",
 ];
 
 /// Minimum version threshold for libstdc++ required when using prebuilt LLVM
