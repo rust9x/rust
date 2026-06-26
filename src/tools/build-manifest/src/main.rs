@@ -288,14 +288,12 @@ impl Builder {
                 }
                 // so is rust-mingw if it's available for the target
                 PkgType::RustMingw => {
-                    if host.contains("pc-windows-gnu") {
+                    if host.contains("windows-gnu") {
                         components.push(host_component(pkg));
                         extensions.extend(
                             TARGETS
                                 .iter()
-                                .filter(|&&target| {
-                                    target.contains("pc-windows-gnu") && target != host
-                                })
+                                .filter(|&&target| target.contains("windows-gnu") && target != host)
                                 .map(|target| Component::from_pkg(pkg, target)),
                         );
                     }

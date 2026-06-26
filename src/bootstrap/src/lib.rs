@@ -1299,7 +1299,10 @@ impl Build {
         // Work around an apparently bad MinGW / GCC optimization,
         // See: https://lists.llvm.org/pipermail/cfe-dev/2016-December/051980.html
         // See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78936
-        if &*target.triple == "i686-pc-windows-gnu" {
+        if &*target.triple == "i686-pc-windows-gnu" ||
+            &*target.triple == "i586-rust9x-windows-gnu" ||
+            &*target.triple == "i686-rust9x-windows-gnu"
+        {
             base.push("-fno-omit-frame-pointer".into());
         }
 
