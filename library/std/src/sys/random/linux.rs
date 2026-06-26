@@ -161,10 +161,8 @@ pub fn fill_bytes(bytes: &mut [u8]) {
     getrandom(bytes, false);
 }
 
-pub fn hashmap_random_keys() -> (u64, u64) {
+pub fn hashmap_random_keys() -> [u8; 16] {
     let mut bytes = [0; 16];
     getrandom(&mut bytes, true);
-    let k1 = u64::from_ne_bytes(bytes[..8].try_into().unwrap());
-    let k2 = u64::from_ne_bytes(bytes[8..].try_into().unwrap());
-    (k1, k2)
+    bytes
 }
