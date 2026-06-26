@@ -42,8 +42,11 @@ const STAGE0_MISSING_TARGETS: &[&str] = &[
     "aarch64-unknown-qnx",
     "x86_64-pc-qnx",
     "i586-rust9x-windows-msvc",
+    "i586-rust9x-windows-gnu",
     "i686-rust9x-windows-msvc",
+    "i686-rust9x-windows-gnu",
     "x86_64-rust9x-windows-msvc",
+    "x86_64-rust9x-windows-gnu",
 ];
 
 /// Minimum version threshold for libstdc++ required when using prebuilt LLVM
