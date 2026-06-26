@@ -936,7 +936,13 @@ impl CommandLineStep for StartupObjects {
             let src_file = &src_dir.join(file.to_string() + ".rs");
             let dst_file = &dst_dir.join(file.to_string() + ".o");
             if !up_to_date(src_file, dst_file) {
-                let mut cmd = command(&builder.initial_rustc);
+                let mut cmd = if target.contains("-rust9x-windows-gnu") {
+                    // stage0 doesn't know about Rust9x targets, use a compiler
+                    // we've built ourselves
+                    builder.rustc_cmd(for_compiler)
+                } else {
+                    command(&builder.initial_rustc)
+                };
                 cmd.env("RUSTC_BOOTSTRAP", "1");
                 if !builder.local_rebuild {
                     // a local_rebuild compiler already has stage1 features
