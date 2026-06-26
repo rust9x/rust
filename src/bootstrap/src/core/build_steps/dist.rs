@@ -211,9 +211,12 @@ fn make_win_dist(plat_root: &Path, target: TargetSelection, builder: &Builder<'_
 
     let (bin_path, lib_path) = get_cc_search_dirs(target, builder);
 
-    let compiler = if target == "i686-pc-windows-gnu" {
+    let compiler = if target == "i686-pc-windows-gnu" ||
+            target == "i686-rust9x-windows-gnu" ||
+            target == "i586-rust9x-windows-gnu" {
         "i686-w64-mingw32-gcc.exe"
-    } else if target == "x86_64-pc-windows-gnu" {
+    } else if target == "x86_64-pc-windows-gnu" ||
+            target == "x86_64-rust9x-windows-gnu" {
         "x86_64-w64-mingw32-gcc.exe"
     } else {
         "gcc.exe"
@@ -434,14 +437,14 @@ impl Step for Mingw {
 
     fn run(self, builder: &Builder<'_>) -> Option<GeneratedTarball> {
         let target = self.target;
-        if !target.contains("pc-windows-gnu") || !builder.config.dist_include_mingw_linker {
+        if !target.contains("windows-gnu") || !builder.config.dist_include_mingw_linker {
             return None;
         }
 
         let mut tarball = Tarball::new(builder, "rust-mingw", &target.triple);
         tarball.set_product_name("Rust MinGW");
 
-        if target.ends_with("pc-windows-gnu") {
+        if target.ends_with("windows-gnu") {
             make_win_dist(tarball.image_dir(), target, builder);
         } else if target.ends_with("pc-windows-gnullvm") {
             make_win_llvm_dist(tarball.image_dir(), target, builder);
@@ -506,7 +509,7 @@ impl Step for Rustc {
         // anything requiring us to distribute a license, but it's likely the
         // install will *also* include the rust-mingw package, which also needs
         // licenses, so to be safe we just include it here in all MinGW packages.
-        if target.contains("pc-windows-gnu") && builder.config.dist_include_mingw_linker {
+        if target.contains("windows-gnu") && builder.config.dist_include_mingw_linker {
             runtime_dll_dist(tarball.image_dir(), target, builder);
             tarball.add_dir(builder.src.join("src/etc/third-party"), "share/doc");
         }
