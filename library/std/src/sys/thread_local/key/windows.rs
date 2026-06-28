@@ -24,10 +24,15 @@
 // FIXME: investigate using a fixed-size array instead, as the maximum number
 //        of keys is [limited to 1088](https://learn.microsoft.com/en-us/windows/win32/ProcThread/thread-local-storage).
 
+#[cfg(not(target_family = "rust9x"))]
 use crate::cell::UnsafeCell;
 use crate::ptr;
+#[cfg(target_family = "rust9x")]
+use crate::sync::atomic::AtomicBool;
 use crate::sync::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release};
 use crate::sync::atomic::{Atomic, AtomicPtr, AtomicU32};
+#[cfg(target_family = "rust9x")]
+use crate::sync::nonpoison::Mutex;
 use crate::sys::c;
 use crate::sys::thread_local::guard;
 
@@ -44,7 +49,12 @@ pub struct LazyKey {
     /// Currently, destructors cannot be unregistered, so we cannot use racy
     /// initialization for keys. Instead, we need synchronize initialization.
     /// Use the Windows-provided `Once` since it does not require TLS.
+    #[cfg(not(target_family = "rust9x"))]
     once: UnsafeCell<c::INIT_ONCE>,
+    #[cfg(target_family = "rust9x")]
+    pending: AtomicBool,
+    #[cfg(target_family = "rust9x")]
+    initing: Mutex<()>,
 }
 
 #[cold]
@@ -59,7 +69,12 @@ impl LazyKey {
             key: AtomicU32::new(0),
             dtor,
             next: AtomicPtr::new(ptr::null_mut()),
+            #[cfg(not(target_family = "rust9x"))]
             once: UnsafeCell::new(c::INIT_ONCE_STATIC_INIT),
+            #[cfg(target_family = "rust9x")]
+            pending: AtomicBool::new(true),
+            #[cfg(target_family = "rust9x")]
+            initing: Mutex::new(()),
         }
     }
 
@@ -78,6 +93,7 @@ impl LazyKey {
     }
 
     #[cold]
+    #[cfg(not(target_family = "rust9x"))]
     unsafe fn init(&'static self) -> Key {
         if self.dtor.is_some() {
             let mut pending = c::FALSE;
@@ -138,6 +154,73 @@ impl LazyKey {
                         fail()
                     }
                     new.wrapping_sub(1)
+                },
+            }
+        }
+    }
+
+    #[cold]
+    #[cfg(target_family = "rust9x")]
+    unsafe fn init(&'static self) -> Key {
+        if self.dtor.is_some() {
+            let pending = self.pending.load(Acquire);
+            if pending == false {
+                // Some other thread initialized the key, load it.
+                // We can use Relaxed here because pending will ensure
+                // key has been initialized.
+                self.key.load(Relaxed) - 1
+            } else {
+                let _lock_guard = self.initing.lock();
+
+                // Multiple threads may have seen pending as true and
+                // tried to initialize it. We have the lock now,
+                // but we may not have the first to get it.
+                // Check if it was already initialized.
+                let pending2 = self.pending.load(Acquire);
+                if pending2 == false {
+                    return self.key.load(Relaxed) - 1;
+                }
+
+                let key = unsafe { c::TlsAlloc() };
+                if key == c::TLS_OUT_OF_INDEXES {
+                    // Since we abort the process, there is no need to wake up
+                    // the waiting threads. If this were a panic, the wakeup
+                    // would need to occur first in order to avoid deadlock.
+                    rtabort!("out of TLS indexes");
+                }
+
+                unsafe {
+                    register_dtor(self);
+                }
+
+                // Store key with a Release to ensure loaders have
+                // access to our destructor.
+                self.key.store(key + 1, Release);
+
+                // Store pending with a release to ensure any pending
+                // loads see the key store value. This ensures we won't
+                // ever hit a situation of finding pending false and
+                // the key uninitialized.
+                self.pending.store(false, Release);
+
+                key
+            }
+        } else {
+            // If there is no destructor to clean up, we can use racy initialization.
+
+            let key = unsafe { c::TlsAlloc() };
+            if key == c::TLS_OUT_OF_INDEXES {
+                rtabort!("out of TLS indexes");
+            }
+
+            match self.key.compare_exchange(0, key + 1, AcqRel, Acquire) {
+                Ok(_) => key,
+                Err(new) => unsafe {
+                    // Some other thread completed initialization first, so destroy
+                    // our key and use theirs.
+                    let r = c::TlsFree(key);
+                    debug_assert_eq!(r, c::TRUE);
+                    new - 1
                 },
             }
         }
