@@ -800,3 +800,27 @@ compat_fn_with_fallback! {
         rtabort!("unimplemented")
     }
 }
+
+#[cfg(target_family = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: false };
+    // >= 2000
+    // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfilesizeex
+    pub fn GetFileSizeEx(
+        hfile: HANDLE,
+        lpfilesize: *mut i64
+    ) -> BOOL {
+        if lpfilesize.is_null() {
+            unsafe { SetLastError(ERROR_INVALID_PARAMETER as u32) };
+            return FALSE;
+        }
+        let mut high32 = 0;
+        let low32 = unsafe { GetFileSize(hfile, &mut high32) };
+        let full_size: u64 = ((high32 as u64) << 32) | (low32 as u64);
+        if low32 == INVALID_FILE_SIZE && unsafe { GetLastError() } != NO_ERROR {
+            FALSE
+        } else {
+            TRUE
+        }
+    }
+}
