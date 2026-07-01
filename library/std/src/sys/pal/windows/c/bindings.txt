@@ -2184,6 +2184,7 @@ GetExitCodeProcess
 GetFileAttributesW
 GetFileInformationByHandle
 GetFileInformationByHandleEx
+GetFileSize
 GetFileSizeEx
 GetFileType
 GETFINALPATHNAMEBYHANDLE_FLAGS
@@ -2234,6 +2235,7 @@ InitializeProcThreadAttributeList
 InitOnceBeginInitialize
 InitOnceComplete
 INVALID_FILE_ATTRIBUTES
+INVALID_FILE_SIZE
 INVALID_SET_FILE_POINTER
 INVALID_SOCKET
 IO_REPARSE_TAG_MOUNT_POINT

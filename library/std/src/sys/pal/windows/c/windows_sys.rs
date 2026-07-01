@@ -53,6 +53,7 @@ windows_link::link!("kernel32.dll" "system" fn GetExitCodeProcess(hprocess : HAN
 windows_link::link!("kernel32.dll" "system" fn GetFileAttributesW(lpfilename : PCWSTR) -> u32);
 windows_link::link!("kernel32.dll" "system" fn GetFileInformationByHandle(hfile : HANDLE, lpfileinformation : *mut BY_HANDLE_FILE_INFORMATION) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn GetFileInformationByHandleEx(hfile : HANDLE, fileinformationclass : FILE_INFO_BY_HANDLE_CLASS, lpfileinformation : *mut core::ffi::c_void, dwbuffersize : u32) -> BOOL);
+windows_link::link!("kernel32.dll" "system" fn GetFileSize(hfile : HANDLE, lpfilesize : *mut u64) -> u32);
 windows_link::link!("kernel32.dll" "system" fn GetFileSizeEx(hfile : HANDLE, lpfilesize : *mut i64) -> BOOL);
 windows_link::link!("kernel32.dll" "system" fn GetFileType(hfile : HANDLE) -> FILE_TYPE);
 windows_link::link!("kernel32.dll" "system" fn GetFinalPathNameByHandleW(hfile : HANDLE, lpszfilepath : PWSTR, cchfilepath : u32, dwflags : GETFINALPATHNAMEBYHANDLE_FLAGS) -> u32);
@@ -2898,6 +2899,7 @@ impl Default for INIT_ONCE {
 }
 pub const INIT_ONCE_INIT_FAILED: u32 = 4u32;
 pub const INVALID_FILE_ATTRIBUTES: u32 = 4294967295u32;
+pub const INVALID_FILE_SIZE: u32 = 4294967295u32;
 pub const INVALID_SET_FILE_POINTER: u32 = 4294967295u32;
 pub const INVALID_SOCKET: SOCKET = -1i32 as _;
 #[repr(C)]
