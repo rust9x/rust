@@ -7,6 +7,7 @@ pub(crate) fn target() -> Target {
     base.plt_by_default = false;
     base.max_atomic_width = Some(64);
     base.families = cvs!["windows", "rust9x"];
+    base.has_thread_local = false;
 
     base.add_pre_link_args(
         LinkerFlavor::Msvc(Lld::No),

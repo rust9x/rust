@@ -3,6 +3,7 @@ use crate::spec::{LinkerFlavor, Lld, Target, cvs};
 pub(crate) fn target() -> Target {
     let mut base = super::i686_pc_windows_msvc::target();
     base.families = cvs!["windows", "rust9x"];
+    base.has_thread_local = false;
 
     base.add_pre_link_args(
         LinkerFlavor::Msvc(Lld::No),
