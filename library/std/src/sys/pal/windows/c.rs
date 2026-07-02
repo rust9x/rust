@@ -820,6 +820,7 @@ compat_fn_with_fallback! {
         if low32 == INVALID_FILE_SIZE && unsafe { GetLastError() } != NO_ERROR {
             FALSE
         } else {
+            unsafe { *lpfilesize = full_size as i64 };
             TRUE
         }
     }
