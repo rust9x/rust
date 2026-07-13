@@ -1,7 +1,6 @@
 use crate::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
 use crate::pin::Pin;
 use crate::sys::c;
-use crate::sys::compat::checks::{MutexKind, is_windows_nt, mutex_kind};
 use crate::sys::pal::{cvt, dur2timeout};
 use crate::sys::sync::{Mutex, OnceBox};
 use crate::time::Duration;
@@ -45,71 +44,29 @@ impl Condvar {
     #[inline]
     pub unsafe fn wait(&self, mutex: &Mutex) {
         let event = self.inner.get_or_init(Self::init);
-        // SignalObjectAndWait is exported on 98SE/Me, but not implemented
-        let use_signal_object_and_wait = if mutex_kind() == MutexKind::Legacy && is_windows_nt() {
-            c::SignalObjectAndWait::available()
-        } else {
-            None
-        };
 
         unsafe {
-            if let Some(signal_object_and_wait) = use_signal_object_and_wait {
-                if signal_object_and_wait(
-                    mutex.legacy.inner.get_unchecked().as_raw_handle(),
-                    event.as_raw_handle(),
-                    c::INFINITE,
-                    c::FALSE,
-                ) != c::WAIT_OBJECT_0
-                {
-                    panic!("event wait failed: {}", io::Error::last_os_error())
-                }
-                mutex.lock();
-            } else {
-                mutex.unlock();
-                if (c::WaitForSingleObject(event.as_raw_handle(), c::INFINITE)) != c::WAIT_OBJECT_0
-                {
-                    panic!("event wait failed: {}", io::Error::last_os_error())
-                }
-                mutex.lock();
+            mutex.unlock();
+            if (c::WaitForSingleObject(event.as_raw_handle(), c::INFINITE)) != c::WAIT_OBJECT_0 {
+                panic!("event wait failed: {}", io::Error::last_os_error())
             }
+            mutex.lock();
         }
     }
 
     pub unsafe fn wait_timeout(&self, mutex: &Mutex, dur: Duration) -> bool {
         let event = self.inner.get_or_init(Self::init);
-        // SignalObjectAndWait is exported on 98SE/Me, but not implemented
-        let use_signal_object_and_wait = if mutex_kind() == MutexKind::Legacy && is_windows_nt() {
-            c::SignalObjectAndWait::available()
-        } else {
-            None
-        };
 
         unsafe {
-            if let Some(signal_object_and_wait) = use_signal_object_and_wait {
-                let ret = match signal_object_and_wait(
-                    mutex.legacy.inner.get_unchecked().as_raw_handle(),
-                    event.as_raw_handle(),
-                    dur2timeout(dur),
-                    c::FALSE,
-                ) {
-                    c::WAIT_OBJECT_0 => true,
-                    c::WAIT_TIMEOUT => false,
-                    _ => panic!("event wait failed: {}", io::Error::last_os_error()),
-                };
-                mutex.lock();
+            mutex.unlock();
+            let ret = match c::WaitForSingleObject(event.as_raw_handle(), dur2timeout(dur)) {
+                c::WAIT_OBJECT_0 => true,
+                c::WAIT_TIMEOUT => false,
+                _ => panic!("event wait failed: {}", io::Error::last_os_error()),
+            };
+            mutex.lock();
 
-                ret
-            } else {
-                mutex.unlock();
-                let ret = match c::WaitForSingleObject(event.as_raw_handle(), dur2timeout(dur)) {
-                    c::WAIT_OBJECT_0 => true,
-                    c::WAIT_TIMEOUT => false,
-                    _ => panic!("event wait failed: {}", io::Error::last_os_error()),
-                };
-                mutex.lock();
-
-                ret
-            }
+            ret
         }
     }
 

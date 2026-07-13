@@ -2,12 +2,29 @@ use crate::cell::UnsafeCell;
 use crate::mem::MaybeUninit;
 use crate::pin::Pin;
 use crate::sys::c;
+#[cfg(target_arch = "x86")]
+use crate::sys::compat::checks;
 use crate::sys::sync::OnceBox;
+
+/// Attempts to enter `cs` via the correct `TryEnterCriticalSection` implementation for the running
+/// Windows version. NT 4+ ships a working one; on NT 3.x it is missing and on 9x/ME it is a
+/// non-functional stub, so on x86 we go through a function pointer resolved at startup that points
+/// at either the native export or one of our reimplementations (see `checks`).
+#[inline]
+unsafe fn try_enter_critical_section(cs: *mut c::CRITICAL_SECTION) -> bool {
+    #[cfg(target_arch = "x86")]
+    let result = unsafe { (checks::try_enter_critical_section_fn())(cs) };
+    #[cfg(not(target_arch = "x86"))]
+    let result = unsafe { c::TryEnterCriticalSection(cs) };
+
+    result != 0
+}
 
 /// Mutex based on critical sections.
 ///
 /// Critical sections are available on all windows versions, but `TryEnterCriticalSection` was only
-/// added with NT4, and never to the 9x range.
+/// added with NT4. It is missing on NT 3.x and a non-functional stub on the 9x range, where we
+/// provide our own reimplementations (see [`try_enter_critical_section`]).
 ///
 /// Critical sections cannot be moved while initialized, so they have to be boxed. For this reason
 /// we use `OnceBox`, which also allows for a `const` constructor.
@@ -53,7 +70,7 @@ impl CriticalSectionMutex {
     #[inline]
     pub unsafe fn try_lock(&self) -> bool {
         let cell = self.inner.get_or_init(Self::init);
-        let successful = c::TryEnterCriticalSection(UnsafeCell::get(&cell)) != 0;
+        let successful = try_enter_critical_section(UnsafeCell::get(&cell));
 
         if !successful {
             false
