@@ -79,7 +79,11 @@ fn init_windows_version_check() {
 
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) enum MutexKind {
-    /// Win 7+ (Vista doesn't support the `Try*` APIs)
+    /// Vista+.
+    ///
+    /// SRW locks and their condition variables exist from Vista on. `TryAcquireSRWLockExclusive`
+    /// was only added in Win 7, but we reimplement it inline (see `windows7::Mutex::try_lock`), so
+    /// this covers Vista too.
     SrwLock,
     /// Critical sections, used on every other version.
     ///
@@ -116,7 +120,7 @@ pub(crate) fn try_enter_critical_section_fn() -> TryEnterCriticalSectionFn {
 
 fn init_mutex_kind_check() {
     unsafe {
-        if c::TryAcquireSRWLockExclusive::available().is_some() {
+        if c::AcquireSRWLockExclusive::available().is_some() {
             MUTEX_KIND = MutexKind::SrwLock;
             return;
         }
