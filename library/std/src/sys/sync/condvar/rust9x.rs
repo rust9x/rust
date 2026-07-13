@@ -17,9 +17,7 @@ impl Drop for Condvar {
         unsafe {
             match mutex_kind() {
                 MutexKind::SrwLock => ManuallyDrop::drop(&mut self.windows7),
-                MutexKind::CriticalSection | MutexKind::Legacy => {
-                    ManuallyDrop::drop(&mut self.legacy)
-                }
+                MutexKind::CriticalSection => ManuallyDrop::drop(&mut self.legacy),
             }
         }
     }
@@ -42,14 +40,14 @@ impl Condvar {
     pub unsafe fn wait(&self, mutex: &Mutex) {
         match mutex_kind() {
             MutexKind::SrwLock => self.windows7.wait(mutex),
-            MutexKind::CriticalSection | MutexKind::Legacy => self.legacy.wait(mutex),
+            MutexKind::CriticalSection => self.legacy.wait(mutex),
         }
     }
 
     pub unsafe fn wait_timeout(&self, mutex: &Mutex, dur: Duration) -> bool {
         match mutex_kind() {
             MutexKind::SrwLock => self.windows7.wait_timeout(mutex, dur),
-            MutexKind::CriticalSection | MutexKind::Legacy => self.legacy.wait_timeout(mutex, dur),
+            MutexKind::CriticalSection => self.legacy.wait_timeout(mutex, dur),
         }
     }
 
@@ -58,7 +56,7 @@ impl Condvar {
         unsafe {
             match mutex_kind() {
                 MutexKind::SrwLock => self.windows7.notify_one(),
-                MutexKind::CriticalSection | MutexKind::Legacy => self.legacy.notify_one(),
+                MutexKind::CriticalSection => self.legacy.notify_one(),
             }
         }
     }
@@ -68,7 +66,7 @@ impl Condvar {
         unsafe {
             match mutex_kind() {
                 MutexKind::SrwLock => self.windows7.notify_all(),
-                MutexKind::CriticalSection | MutexKind::Legacy => self.legacy.notify_all(),
+                MutexKind::CriticalSection => self.legacy.notify_all(),
             }
         }
     }
