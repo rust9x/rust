@@ -9,6 +9,57 @@
 //!
 //! [1]: https://devblogs.microsoft.com/oldnewthing/20191011-00/?p=102989
 
+cfg_select! {
+    target_family = "rust9x" => {
+
+// https://github.com/rust-lang/rust/pull/148799 replaced this old implementation with the new
+// fiber-based one below. FlsAlloc etc. are only available on Vista and later, so we bring back the
+// old implementation here.
+
+use core::ffi::c_void;
+
+use crate::ptr;
+use crate::sys::c;
+
+unsafe extern "C" {
+    #[link_name = "_tls_used"]
+    static TLS_USED: u8;
+}
+pub fn enable() {
+    // When destructors are used, we need to add a reference to the _tls_used
+    // symbol provided by the CRT, otherwise the TLS support code will get
+    // GC'd by the linker and our callback won't be called.
+    unsafe { ptr::from_ref(&TLS_USED).read_volatile() };
+    // We also need to reference CALLBACK to make sure it does not get GC'd
+    // by the compiler/LLVM. The callback will end up inside the TLS
+    // callback array pointed to by _TLS_USED through linker shenanigans,
+    // but as far as the compiler is concerned, it looks like the data is
+    // unused, so we need this hack to prevent it from disappearing.
+    unsafe { ptr::from_ref(&CALLBACK).read_volatile() };
+}
+
+#[unsafe(link_section = ".CRT$XLB")]
+#[cfg_attr(miri, used)] // Miri only considers explicitly `#[used]` statics for `lookup_link_section`
+pub static CALLBACK: unsafe extern "system" fn(*mut c_void, u32, *mut c_void) = tls_callback;
+
+unsafe extern "system" fn tls_callback(_h: *mut c_void, dw_reason: u32, _pv: *mut c_void) {
+    if dw_reason == c::DLL_THREAD_DETACH || dw_reason == c::DLL_PROCESS_DETACH {
+        unsafe {
+            #[cfg(target_thread_local)]
+            super::super::destructors::run();
+            #[cfg(not(target_thread_local))]
+            super::super::key::run_dtors();
+
+            crate::rt::thread_cleanup();
+        }
+    }
+}
+
+
+    } // cfg_select! r9x end
+    _ => { // cfg_select! non-r9x start
+
+
 use core::ffi::c_void;
 use core::sync::atomic::{AtomicBool, AtomicU32, Ordering, fence};
 
@@ -265,3 +316,6 @@ unsafe extern "system" fn cleanup(_ptr: *const c_void) {
 
     crate::rt::thread_cleanup();
 }
+
+    } // cfg_select! non-r9x end
+} // cfg_select! end
