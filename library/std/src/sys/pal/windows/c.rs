@@ -60,8 +60,10 @@ pub const TOKEN_READ: u32 = cu(windows_sys::TOKEN_READ);
 pub const DUPLICATE_SAME_ACCESS: u32 = cu(windows_sys::DUPLICATE_SAME_ACCESS);
 
 // dwFlags -- GetModuleHandleEx
+#[cfg(not(target_family = "rust9x"))]
 pub const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: u32 =
     cu(windows_sys::GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS);
+#[cfg(not(target_family = "rust9x"))]
 pub const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: u32 =
     cu(windows_sys::GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT);
 
@@ -477,6 +479,8 @@ cfg_select! {
     _ => {}
 }
 
+// only needed for the new fiber-based thread local cleanup code, which is not used by rust9x
+#[cfg(not(target_family = "rust9x"))]
 unsafe extern "C" {
     pub fn atexit(cb: unsafe extern "C" fn()) -> c_int;
 }
