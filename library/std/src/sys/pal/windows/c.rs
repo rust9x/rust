@@ -263,6 +263,8 @@ cfg_select! {
 #[cfg(not(target_vendor = "win7"))]
 windows_link::link!("ws2_32.dll" "system" fn GetHostNameW(name : PWSTR, namelen : i32) -> i32);
 
+// only needed for the new fiber-based thread local cleanup code, which is not used by rust9x
+#[cfg(not(target_family = "rust9x"))]
 unsafe extern "C" {
     pub fn atexit(cb: unsafe extern "C" fn()) -> c_int;
 }
