@@ -45,8 +45,8 @@ pub macro link($($tt:tt)*) {
 #[cfg(not(feature = "windows_raw_dylib"))]
 #[cfg(not(target_os = "cygwin"))] // Cygwin doesn't need these libs
 #[cfg_attr(target_vendor = "win7", link(name = "advapi32"))]
-#[link(name = "ntdll")]
-#[link(name = "userenv")]
+#[cfg_attr(not(target_family = "rust9x"), link(name = "ntdll"))]
+#[cfg_attr(not(target_family = "rust9x"), link(name = "userenv"))]
 #[link(name = "ws2_32")]
-#[link(name = "dbghelp")] // required for backtrace-rs symbolization
+#[cfg_attr(not(target_family = "rust9x"), link(name = "dbghelp"))] // required for backtrace-rs symbolization
 unsafe extern "C" {}
