@@ -48,5 +48,5 @@ pub macro link($($tt:tt)*) {
 #[cfg_attr(not(target_family = "rust9x"), link(name = "ntdll"))]
 #[cfg_attr(not(target_family = "rust9x"), link(name = "userenv"))]
 #[link(name = "ws2_32")]
-#[link(name = "dbghelp")] // required for backtrace-rs symbolization
+#[cfg_attr(not(target_family = "rust9x"), link(name = "dbghelp"))] // required for backtrace-rs symbolization
 unsafe extern "C" {}
