@@ -97,6 +97,39 @@ fn open_link_no_reparse(
             ..c::OBJECT_ATTRIBUTES::with_length()
         };
         let share = c::FILE_SHARE_DELETE | c::FILE_SHARE_READ | c::FILE_SHARE_WRITE;
+
+        cfg_select! {
+            target_family = "rust9x" => {
+                static OPTIONS: Atomic<u32> = AtomicU32::new(c::FILE_OPEN_REPARSE_POINT);
+                let orig_options = options;
+
+                let options = OPTIONS.load(Ordering::Relaxed) | options;
+                let result = nt_open_file(access, &object, share, options);
+
+                // Retry without OBJ_DONT_REPARSE if it's not supported.
+                if matches!(result, Err(WinError::INVALID_PARAMETER))
+                    && ATTRIBUTES.load(Ordering::Relaxed) == c::OBJ_DONT_REPARSE
+                {
+                    ATTRIBUTES.store(0, Ordering::Relaxed);
+                    object.Attributes = 0;
+
+                    let result = nt_open_file(access, &object, share, options);
+
+                    // Retry without FILE_OPEN_REPARSE_POINT if it's not supported (NT < 4)
+                    if matches!(result, Err(WinError::INVALID_PARAMETER))
+                        && OPTIONS.load(Ordering::Relaxed) == c::FILE_OPEN_REPARSE_POINT
+                    {
+                        OPTIONS.store(0, Ordering::Relaxed);
+                        nt_open_file(access, &object, share, orig_options)
+                    } else {
+                        result
+                    }
+                } else {
+                    result
+                }
+            }
+            _ => { // target_family != "rust9x"
+
         let options = c::FILE_OPEN_REPARSE_POINT | options;
         let result = nt_open_file(access, &object, share, options);
 
@@ -109,6 +142,10 @@ fn open_link_no_reparse(
             nt_open_file(access, &object, share, options)
         } else {
             result
+        }
+
+
+            } // target_family != "rust9x" END
         }
     };
 
