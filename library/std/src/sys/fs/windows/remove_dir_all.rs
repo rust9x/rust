@@ -88,6 +88,13 @@ fn open_link_no_reparse(
     // tricked into following a symlink. However, it may not be available in
     // earlier versions of Windows.
     static ATTRIBUTES: Atomic<u32> = AtomicU32::new(c::OBJ_DONT_REPARSE);
+    #[cfg(target_family = "rust9x")]
+    static OPTIONS: Atomic<u32> = AtomicU32::new(c::FILE_OPEN_REPARSE_POINT);
+
+    #[cfg(target_family = "rust9x")]
+    let reparse_option = OPTIONS.load(Ordering::Relaxed);
+    #[cfg(not(target_family = "rust9x"))]
+    let reparse_option = c::FILE_OPEN_REPARSE_POINT;
 
     let result = unsafe {
         let mut object = c::OBJECT_ATTRIBUTES {
@@ -97,8 +104,8 @@ fn open_link_no_reparse(
             ..c::OBJECT_ATTRIBUTES::with_length()
         };
         let share = c::FILE_SHARE_DELETE | c::FILE_SHARE_READ | c::FILE_SHARE_WRITE;
-        let options = c::FILE_OPEN_REPARSE_POINT | options;
-        let result = nt_open_file(access, &object, share, options);
+
+        let mut result = nt_open_file(access, &object, share, reparse_option | options);
 
         // Retry without OBJ_DONT_REPARSE if it's not supported.
         if matches!(result, Err(WinError::INVALID_PARAMETER))
@@ -106,10 +113,19 @@ fn open_link_no_reparse(
         {
             ATTRIBUTES.store(0, Ordering::Relaxed);
             object.Attributes = 0;
-            nt_open_file(access, &object, share, options)
-        } else {
-            result
+            result = nt_open_file(access, &object, share, reparse_option | options);
+
+            // Retry without FILE_OPEN_REPARSE_POINT if it's not supported (NT < 4)
+            #[cfg(target_family = "rust9x")]
+            if matches!(result, Err(WinError::INVALID_PARAMETER))
+                && reparse_option == c::FILE_OPEN_REPARSE_POINT
+            {
+                OPTIONS.store(0, Ordering::Relaxed);
+                result = nt_open_file(access, &object, share, options);
+            }
         }
+
+        result
     };
 
     // Ignore not found errors
