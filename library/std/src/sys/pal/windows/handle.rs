@@ -256,7 +256,7 @@ impl Handle {
         let len = cmp::min(len, u32::MAX as usize) as u32;
 
         #[cfg(target_family = "rust9x")]
-        if !crate::sys::compat::checks::supports_async_io() {
+        if !crate::sys::compat::checks::is_windows_nt() {
             unsafe {
                 if let Some(offset) = offset {
                     cvt(c::SetFilePointerEx(
@@ -334,7 +334,7 @@ impl Handle {
         let len = cmp::min(buf.len(), u32::MAX as usize) as u32;
 
         #[cfg(target_family = "rust9x")]
-        if !crate::sys::compat::checks::supports_async_io() {
+        if !crate::sys::compat::checks::is_windows_nt() {
             unsafe {
                 if let Some(offset) = offset {
                     cvt(c::SetFilePointerEx(
