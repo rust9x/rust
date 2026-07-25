@@ -18,19 +18,20 @@ target = [
     "x86_64-pc-windows-msvc",
 ]
 docs = false
-# extended = true
-# tools = [
-#     #    "cargo",
-#     #    "clippy",
-#     "rustdoc",
-#     #    "rustfmt",
-#     #    "rust-analyzer",
-#     #    "rust-analyzer-proc-macro-srv",
-#     #    "analysis",
-#     "src",
-#     #    "wasm-component-ld",
-#     #    "miri", "cargo-miri" # for dev/nightly channels
-# ]
+
+extended = true
+tools = [
+    "cargo",
+    #    "clippy",
+    "rustdoc",
+    #    "rustfmt",
+    #    "rust-analyzer",
+    "rust-analyzer-proc-macro-srv",
+    #    "analysis",
+    "src",
+    #    "wasm-component-ld",
+    #    "miri", "cargo-miri" # for dev/nightly channels
+]
 
 [install]
 # for creating a downloadable package: python x.py install, then create and archive this
