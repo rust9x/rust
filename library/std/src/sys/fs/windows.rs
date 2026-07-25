@@ -448,11 +448,12 @@ impl File {
             }
             let file = File { handle: Handle::from_inner(handle) };
 
-            // 9x/ME do not support FILE_APPEND_DATA/FILE_WRITE_DATA, which means that we cannot get
-            // the append-only behaviors: atomic appends, cursor starts at the end of the file. The
-            // latter can be emulated, at least, by just seeking to the end.
+            // 9x/Me and NT3.5 and older do not support FILE_APPEND_DATA/FILE_WRITE_DATA, which
+            // means that we cannot get the append-only behaviors: atomic appends, cursor starts at
+            // the end of the file. The latter can be emulated, at least, by just seeking to the
+            // end.
             #[cfg(target_family = "rust9x")]
-            if opts.append && !crate::sys::compat::checks::is_windows_nt() {
+            if opts.append && !crate::sys::compat::checks::supports_file_atomic_append() {
                 file.seek(SeekFrom::End(0))?;
             }
 
