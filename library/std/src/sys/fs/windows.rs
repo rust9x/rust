@@ -1727,6 +1727,11 @@ fn metadata(path: &WCStr, reparse: ReparsePoint) -> io::Result<FileAttr> {
                 // therefore it's safe to assume the file name given does not
                 // include wildcards.
                 let mut wfd: c::WIN32_FIND_DATAW = mem::zeroed();
+
+                #[cfg(target_family = "rust9x")]
+                let handle = c::FindFirstFileW(path.as_ptr(), &mut wfd as *mut _ as _);
+
+                #[cfg(not(target_family = "rust9x"))]
                 let handle = c::FindFirstFileExW(
                     path.as_ptr(),
                     c::FindExInfoBasic,
