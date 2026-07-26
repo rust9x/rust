@@ -259,7 +259,7 @@ compat_fn_with_fallback! {
         ObjectAttributes: *mut c_void,
         Flags: u32
     ) -> NTSTATUS {
-        panic!("keyed events not available")
+        rtabort!("unimplemented")
     }
     #[cfg(any(target_vendor = "win7", target_family = "rust9x"))]
     pub fn NtReleaseKeyedEvent(
@@ -268,7 +268,7 @@ compat_fn_with_fallback! {
         Alertable: bool,
         Timeout: *mut i64
     ) -> NTSTATUS {
-        panic!("keyed events not available")
+        rtabort!("unimplemented")
     }
     #[cfg(any(target_vendor = "win7", target_family = "rust9x"))]
     pub fn NtWaitForKeyedEvent(
@@ -277,7 +277,7 @@ compat_fn_with_fallback! {
         Alertable: bool,
         Timeout: *mut i64
     ) -> NTSTATUS {
-        panic!("keyed events not available")
+        rtabort!("unimplemented")
     }
 }
 
