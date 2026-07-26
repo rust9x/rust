@@ -259,7 +259,7 @@ compat_fn_with_fallback! {
         ObjectAttributes: *mut c_void,
         Flags: u32
     ) -> NTSTATUS {
-        panic!("keyed events not available")
+        rtabort!("unimplemented")
     }
     #[cfg(any(target_vendor = "win7", target_family = "rust9x"))]
     pub fn NtReleaseKeyedEvent(
@@ -268,7 +268,7 @@ compat_fn_with_fallback! {
         Alertable: bool,
         Timeout: *mut i64
     ) -> NTSTATUS {
-        panic!("keyed events not available")
+        rtabort!("unimplemented")
     }
     #[cfg(any(target_vendor = "win7", target_family = "rust9x"))]
     pub fn NtWaitForKeyedEvent(
@@ -277,7 +277,7 @@ compat_fn_with_fallback! {
         Alertable: bool,
         Timeout: *mut i64
     ) -> NTSTATUS {
-        panic!("keyed events not available")
+        rtabort!("unimplemented")
     }
 }
 
@@ -306,6 +306,7 @@ cfg_select! {
                 eabuffer: *const core::ffi::c_void,
                 ealength: u32
             ) -> NTSTATUS {
+                // used in Dir::open_file
                 STATUS_NOT_IMPLEMENTED
             }
 
@@ -320,7 +321,7 @@ cfg_select! {
                 byteoffset: *const i64,
                 key: *const u32
             ) -> NTSTATUS {
-                STATUS_NOT_IMPLEMENTED
+                rtabort!("unimplemented")
             }
             pub fn NtWriteFile(
                 filehandle: HANDLE,
@@ -333,7 +334,7 @@ cfg_select! {
                 byteoffset: *const i64,
                 key: *const u32
             ) -> NTSTATUS {
-                STATUS_NOT_IMPLEMENTED
+                rtabort!("unimplemented")
             }
             pub fn RtlNtStatusToDosError(Status: NTSTATUS) -> u32 {
                 ERROR_CALL_NOT_IMPLEMENTED
@@ -346,7 +347,7 @@ cfg_select! {
                 shareaccess: u32,
                 openoptions: u32
             ) -> NTSTATUS {
-                STATUS_NOT_IMPLEMENTED
+                rtabort!("unimplemented")
             }
         }
     }
