@@ -694,8 +694,24 @@ compat_fn_with_fallback! {
     // >= NT 3.5+, 95+
     // https://learn.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-freeenvironmentstringsw
     pub fn FreeEnvironmentStringsW(penv: PCWSTR) -> BOOL {
-        // just leak it on NT 3.1
+        // do nothing on NT 3.1 -- it is just a pointer into the PEB
         TRUE
+    }
+}
+
+#[cfg(target_family = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: true };
+
+    // >= NT 3.5+, 95+
+    // https://learn.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getenvironmentstringsw
+    pub fn GetEnvironmentStringsW() -> PWSTR {
+        unsafe { GetEnvironmentStrings() as PWSTR }
+    }
+
+    // _only_ on NT 3.1. Equivalent to GetEnvironmentStringsA, as it is in the ACP, not Unicode...
+    pub fn GetEnvironmentStrings() -> PCSTR {
+        rtabort!("unimplemented")
     }
 }
 
