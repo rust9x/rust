@@ -721,6 +721,28 @@ mod wship6 {
 }
 
 #[cfg(target_family = "rust9x")]
+compat_fn_with_fallback! {
+    pub static KERNEL32: &CStr = c"kernel32" => { load: false, unicows: true };
+    // >= NT 3.5+, 95+
+    // https://learn.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-freeenvironmentstringsw
+    pub fn FreeEnvironmentStringsW(penv: PCWSTR) -> BOOL {
+        // do nothing on NT 3.1 -- it is just a pointer into the PEB
+        TRUE
+    }
+
+    // >= NT 3.5+, 95+
+    // https://learn.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getenvironmentstringsw
+    pub fn GetEnvironmentStringsW() -> PWSTR {
+        unsafe { GetEnvironmentStrings() as PWSTR }
+    }
+
+    // _only_ on NT 3.1. Equivalent to GetEnvironmentStringsA, as it is in the ACP, not Unicode...
+    pub fn GetEnvironmentStrings() -> PCSTR {
+        rtabort!("unimplemented")
+    }
+}
+
+#[cfg(target_family = "rust9x")]
 pub(crate) use fileextd::{
     get_file_information_by_handle_ex as GetFileInformationByHandleEx,
     set_file_information_by_handle as SetFileInformationByHandle,

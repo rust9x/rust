@@ -31,6 +31,11 @@ impl Iterator for EnvIterator {
     type Item = (OsString, OsString);
 
     fn next(&mut self) -> Option<(OsString, OsString)> {
+        #[cfg(target_family = "rust9x")]
+        if crate::sys::c::GetEnvironmentStringsW::available().is_none() {
+            return Self::nt31_next(self);
+        }
+
         let Self(cur) = self;
         loop {
             unsafe {
@@ -57,6 +62,53 @@ impl Iterator for EnvIterator {
                 return Some((
                     OsStringExt::from_wide(&s[..pos]),
                     OsStringExt::from_wide(&s[pos + 1..]),
+                ));
+            }
+        }
+    }
+}
+
+#[cfg(target_family = "rust9x")]
+impl EnvIterator {
+    /// On NT 3.1, the env strings are actually not unicode, but in the active code page.
+    #[cold]
+    fn nt31_next(&mut self) -> Option<(OsString, OsString)> {
+        use crate::sys::c::MultiByteToWideChar;
+        loop {
+            unsafe {
+                let cur: &mut *mut u8 = &mut *(&raw mut self.0).cast::<*mut u8>();
+
+                if **cur == 0 {
+                    return None;
+                }
+                let p = *cur as *const u8;
+                let mut len = 0;
+                while *p.add(len) != 0 {
+                    len += 1;
+                }
+                let s = slice::from_raw_parts(p, len);
+                *cur = cur.add(len + 1);
+
+                let pos = match s[1..].iter().position(|&u| u == b'=').map(|p| p + 1) {
+                    Some(p) => p,
+                    None => continue,
+                };
+
+                // size limit as reverse-engineered from NT 3.1's cmd.exe
+                let mut buf = [core::mem::MaybeUninit::<u16>::uninit(); 1024];
+
+                let len = MultiByteToWideChar(
+                    0,
+                    0,
+                    s.as_ptr().cast(),
+                    len as _,
+                    buf.as_mut_ptr().cast(),
+                    1024,
+                ) as usize;
+
+                return Some((
+                    OsStringExt::from_wide(buf[..pos].assume_init_ref()),
+                    OsStringExt::from_wide(buf[pos + 1..len].assume_init_ref()),
                 ));
             }
         }
