@@ -3,9 +3,11 @@
 use core::ffi::c_void;
 use core::ptr;
 use core::sync::atomic::{
-    Atomic, AtomicBool, AtomicI8, AtomicI16, AtomicI32, AtomicI64, AtomicIsize, AtomicPtr,
-    AtomicU8, AtomicU16, AtomicU32, AtomicU64, AtomicUsize,
+    Atomic, AtomicBool, AtomicI8, AtomicI16, AtomicI32, AtomicIsize, AtomicPtr,
+    AtomicU8, AtomicU16, AtomicU32, AtomicUsize,
 };
+#[cfg(target_has_atomic = "64")]
+use core::sync::atomic::{AtomicI64, AtomicU64};
 use core::time::Duration;
 
 use super::api::{self, WinError};
@@ -40,14 +42,19 @@ unsafe_waitable_int! {
     (i8, AtomicI8),
     (i16, AtomicI16),
     (i32, AtomicI32),
-    (i64, AtomicI64),
     (isize, AtomicIsize),
     (u8, AtomicU8),
     (u16, AtomicU16),
     (u32, AtomicU32),
-    (u64, AtomicU64),
     (usize, AtomicUsize),
 }
+
+#[cfg(target_has_atomic = "64")]
+unsafe_waitable_int! {
+    (i64, AtomicI64),
+    (u64, AtomicU64),
+}
+
 unsafe impl<T> Waitable for *const T {
     type Futex = Atomic<*mut T>;
 }

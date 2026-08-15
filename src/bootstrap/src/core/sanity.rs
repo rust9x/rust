@@ -41,6 +41,7 @@ const STAGE0_MISSING_TARGETS: &[&str] = &[
     "aarch64-unknown-linux-pauthtest", // Stage 0 compiler is not guaranteed to see the target yet.
     "aarch64-unknown-qnx",
     "x86_64-pc-qnx",
+    "i486-rust9x-windows-msvc",
     "i586-rust9x-windows-msvc",
     "i586-rust9x-windows-gnu",
     "i686-rust9x-windows-msvc",

@@ -1645,6 +1645,7 @@ supported_targets! {
     ("i686-win7-windows-msvc", i686_win7_windows_msvc),
     ("i686-rust9x-windows-msvc", i686_rust9x_windows_msvc),
     ("i586-rust9x-windows-msvc", i586_rust9x_windows_msvc),
+    ("i486-rust9x-windows-msvc", i486_rust9x_windows_msvc),
     ("thumbv7a-pc-windows-msvc", thumbv7a_pc_windows_msvc),
     ("thumbv7a-uwp-windows-msvc", thumbv7a_uwp_windows_msvc),
 

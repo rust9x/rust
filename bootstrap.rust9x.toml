@@ -12,6 +12,7 @@ download-ci-llvm = true
 [build]
 build = "x86_64-pc-windows-msvc"
 target = [
+    "i486-rust9x-windows-msvc",
     "i586-rust9x-windows-msvc",
     "i686-rust9x-windows-msvc",
     "x86_64-rust9x-windows-msvc",

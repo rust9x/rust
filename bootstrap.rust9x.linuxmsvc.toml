@@ -14,6 +14,7 @@ download-ci-llvm = true
 [build]
 build = "x86_64-unknown-linux-gnu"
 target = [
+    # "i486-rust9x-windows-msvc",
     "i586-rust9x-windows-msvc",
     "i686-rust9x-windows-msvc",
     "x86_64-rust9x-windows-msvc",
@@ -35,6 +36,9 @@ tools = [
     #    "miri", "cargo-miri" # for dev/nightly channels
 ]
 
+[target.i486-rust9x-windows-msvc]
+cc = "clang-cl"
+ar = "llvm-lib"
 [target.i586-rust9x-windows-msvc]
 cc = "clang-cl"
 ar = "llvm-lib"
