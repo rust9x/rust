@@ -33,19 +33,11 @@ tools = [
     #    "miri", "cargo-miri" # for dev/nightly channels
 ]
 
-[install]
-# for creating a downloadable package: python x.py install, then create and archive this
-prefix = "../dist/rust9x"
-sysconfdir = "."
-
 [rust]
 # enable rust-lld.exe so we don't need editbin.exe
 lld = true
-dist-src = false
+bootstrap-override-lld = "self-contained"
 
 # you can override this with -i/--incremental
 # incremental = false
 # incremental = true
-
-[dist]
-src-tarball = false

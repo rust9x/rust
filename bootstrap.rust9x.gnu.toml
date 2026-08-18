@@ -37,36 +37,23 @@ tools = [
 [target.x86_64-pc-windows-gnu]
 cc = "x86_64-w64-mingw32-gcc"
 cxx = "x86_64-w64-mingw32-g++"
-
 [target.x86_64-rust9x-windows-gnu]
 cc = "x86_64-w64-mingw32-gcc"
 cxx = "x86_64-w64-mingw32-g++"
-
 [target.i686-pc-windows-gnu]
 cc = "i686-w64-mingw32-gcc"
 cxx = "i686-w64-mingw32-g++"
-
 [target.i686-rust9x-windows-gnu]
 cc = "i686-w64-mingw32-gcc"
 cxx = "i686-w64-mingw32-g++"
-
 [target.i586-rust9x-windows-gnu]
 cc = "i686-w64-mingw32-gcc"
 cxx = "i686-w64-mingw32-g++"
 
-[install]
-# for creating a downloadable package: python x.py install, then create and archive this
-prefix = "../dist/rust9x-gnu"
-sysconfdir = "."
-
 [rust]
 # enable rust-lld.exe so we don't need editbin.exe
 lld = true
-dist-src = false
 
 # you can override this with -i/--incremental
 # incremental = false
 # incremental = true
-
-[dist]
-src-tarball = false
