@@ -67,6 +67,16 @@ pub(crate) fn win9x_tdbx_offset() -> usize {
     unsafe { WIN9X_TDBX_OFFSET as usize }
 }
 
+/// The `CriticalSection` pointer to the internals is at a different offset on 95 vs 98/ME.
+#[cfg(target_arch = "x86")]
+static mut IS_WIN95: bool = false;
+
+#[cfg(target_arch = "x86")]
+#[inline(always)]
+pub(crate) fn is_win95() -> bool {
+    unsafe { IS_WIN95 }
+}
+
 fn init_windows_version_check() {
     // according to old MSDN info, the high-order bit is set only on 95/98/ME.
     unsafe {
@@ -82,9 +92,10 @@ fn init_windows_version_check() {
 
         #[cfg(target_arch = "x86")]
         if !IS_NT {
-            // The TDBX pointer sits at offset 0x80 on ME and 0x50 on 95/98.
-            const ME_VERSION: u32 = 0xC000_5A04;
-            WIN9X_TDBX_OFFSET = if version == ME_VERSION { 0x80 } else { 0x50 };
+            // The TDBX pointer is at offset 0x80 on ME and 0x50 on 95/98.
+            const ME_MINOR: u8 = 90; // 4.90
+            WIN9X_TDBX_OFFSET = if minor == ME_MINOR { 0x80 } else { 0x50 };
+            IS_WIN95 = minor == 0; // 95 is 4.00
         }
     };
 }

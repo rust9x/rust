@@ -17,8 +17,11 @@ const CRITICAL_SECTION_TYPE: u8 = 4;
 #[repr(C)]
 struct CriticalSection {
     ty: u8,
-    imp: *mut CriticalSectionImpl,
-    _reserved: [u32; 4],
+    imp_98me: *mut CriticalSectionImpl,
+    _reserved0: u32,
+    imp_95: *mut CriticalSectionImpl,
+    _reserved2: u32,
+    _reserved3: u32,
 }
 const _: () = assert!(crate::mem::size_of::<CriticalSection>() == 24);
 
@@ -58,7 +61,14 @@ pub(crate) unsafe extern "system" fn try_enter(cs: *mut c::CRITICAL_SECTION) -> 
     // is always present; a mismatch would mean corruption or a foreign structure.
     debug_assert_eq!(unsafe { (*cs).ty }, CRITICAL_SECTION_TYPE);
 
-    let imp = unsafe { (*cs).imp };
+    let imp = unsafe {
+        if checks::is_win95() {
+            core::hint::cold_path();
+            (*cs).imp_95
+        } else {
+            (*cs).imp_98me
+        }
+    };
     let lock_count = unsafe { &(*imp).lock_count };
     let current_tdbx = unsafe { current_tdbx(checks::win9x_tdbx_offset()) };
 
