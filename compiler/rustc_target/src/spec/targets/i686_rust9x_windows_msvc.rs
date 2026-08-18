@@ -27,6 +27,7 @@ pub(crate) fn target() -> Target {
 
     // use rust-lld by default
     base.options.linker_flavor = crate::spec::LinkerFlavor::Msvc(crate::spec::Lld::Yes);
+    base.options.linker = Some("rust-lld".into());
 
     // alignment characteristics on Win7 and earlier are bad (see win7 target)
     base.options.has_thread_local = false;
