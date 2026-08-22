@@ -1,0 +1,220 @@
+name: release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: tag of an existing release to (re)build and upload assets for
+        required: true
+        type: string
+
+# `gh release upload` needs write access to the release
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TAG: ${{ inputs.tag || github.event.release.tag_name }}
+  # bootstrap assumes that `HEAD^1` is an upstream bors merge commit when it detects a GitHub
+  # Actions environment, which is only true for rust-lang/rust's own CI. Here it would resolve to a
+  # rust9x commit and `download-ci-llvm` would then try (and fail) to fetch LLVM for it, so tell
+  # bootstrap to behave as if it were running locally: it then looks for the most recent upstream
+  # bors commit in the git history instead. This is why the checkouts below are not shallow.
+  X_PY_FLAGS: --stage 2 --ci false
+
+jobs:
+  linux:
+    name: dist x86_64-unknown-linux-gnu
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: check that the release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
+
+      - name: list disk space before
+        run: |
+          df -h
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          # full commit history, see X_PY_FLAGS above. `blob:none` to save download time and space,
+          # and the handful of historical blobs bootstrap reads (`src/ci/channel` and `src/version`
+          # at the upstream commit) are fetched on demand
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: build dist
+        run: python3 x.py dist --config bootstrap.ci.linux.toml $X_PY_FLAGS
+
+      - name: collect tarballs
+        run: |
+          shopt -s failglob
+          mkdir -p upload
+          # `rust-[0-9]*` matches the combined installer (`rust-<version>-<host>`) without also
+          # matching the `rust-std-`/`rust-src-`/... components
+          cp build/dist/rust-[0-9]*-x86_64-unknown-linux-gnu.tar.xz upload/
+          ls -l upload
+          count="$(ls -1 upload | wc -l)"
+          if [ "$count" -ne 1 ]; then
+            echo "::error::expected exactly 1 tarball, found $count"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-x86_64-unknown-linux-gnu
+          path: upload/*.tar.xz
+          if-no-files-found: error
+          # already compressed
+          compression-level: 0
+          retention-days: 2
+
+      - name: list disk space after
+        run: |
+          df -h
+
+  windows:
+    name: dist x86_64-pc-windows-msvc + rust9x targets
+    runs-on: windows-latest
+    timeout-minutes: 360
+    steps:
+      - name: check that the release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
+
+      - name: configure git
+        run: |
+          # CRLF conversion is on by default in the runner image; among other things it would
+          # break the `install.sh` scripts shipped inside the dist tarballs
+          git config --global core.autocrlf false
+          # some paths in this repository exceed the legacy MAX_PATH limit
+          git config --global core.longpaths true
+
+      - name: list disk space before
+        run: |
+          df -h
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          # see linux job
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: build dist
+        run: python x.py dist --config bootstrap.ci.windows.toml $X_PY_FLAGS
+
+      - name: collect tarballs
+        run: |
+          shopt -s failglob
+          mkdir -p upload
+          # see the linux job for the `[0-9]*` globs
+          cp build/dist/rust-[0-9]*-x86_64-pc-windows-msvc.tar.xz upload/
+          cp build/dist/rust-std-[0-9]*-i586-rust9x-windows-msvc.tar.xz upload/
+          cp build/dist/rust-std-[0-9]*-i686-rust9x-windows-msvc.tar.xz upload/
+          cp build/dist/rust-std-[0-9]*-x86_64-rust9x-windows-msvc.tar.xz upload/
+          ls -l upload
+          count="$(ls -1 upload | wc -l)"
+          if [ "$count" -ne 4 ]; then
+            echo "::error::expected exactly 4 tarballs, found $count"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-x86_64-pc-windows-msvc
+          path: upload/*.tar.xz
+          if-no-files-found: error
+          # already compressed
+          compression-level: 0
+          retention-days: 2
+
+      - name: list disk space after
+        run: |
+          df -h
+
+  publish:
+    name: bundle and upload release assets
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: dist-*
+
+      - name: unpack components
+        run: |
+          shopt -s failglob
+          mkdir -p components/linux components/windows
+          for f in artifacts/dist-x86_64-unknown-linux-gnu/*.tar.xz; do
+            tar -xJf "$f" -C components/linux
+          done
+          for f in artifacts/dist-x86_64-pc-windows-msvc/*.tar.xz; do
+            tar -xJf "$f" -C components/windows
+          done
+          ls components/linux components/windows
+
+      - name: install full toolchains
+        run: |
+          shopt -s failglob
+
+          # the rust9x std components are target-only and built by the windows job, but they belong
+          # in both toolchains
+          install_toolchain() {
+            local host="$1" prefix="$2"
+            components/*/rust-[0-9]*-"$host"/install.sh --prefix="$prefix" --disable-ldconfig
+            for std in components/windows/rust-std-[0-9]*-rust9x-windows-msvc; do
+              "$std"/install.sh --prefix="$prefix" --disable-ldconfig
+            done
+          }
+
+          mkdir -p bundles
+          for host in x86_64-unknown-linux-gnu x86_64-pc-windows-msvc; do
+            prefix="$PWD/bundles/$TAG-$host"
+            install_toolchain "$host" "$prefix"
+
+            echo "--- installed targets for $host:"
+            ls "$prefix/lib/rustlib"
+            for target in i586-rust9x-windows-msvc i686-rust9x-windows-msvc \
+                          x86_64-rust9x-windows-msvc "$host"; do
+              if [ ! -d "$prefix/lib/rustlib/$target/lib" ]; then
+                echo "::error::$target is missing from the $host toolchain"
+                exit 1
+              fi
+            done
+          done
+
+      - name: compress bundles
+        run: |
+          mkdir -p out
+          cd bundles
+          XZ_OPT='-9 -T0 --memlimit-compress=90%' tar -cJf "../out/$TAG-x86_64-unknown-linux-gnu.tar.xz" \
+            "$TAG-x86_64-unknown-linux-gnu"
+          7z a -mx=9 -mmt=on "../out/$TAG-x86_64-pc-windows-msvc.7z" \
+            "$TAG-x86_64-pc-windows-msvc" >/dev/null
+          cd ..
+          ls -l out
+
+      - name: upload to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$TAG" \
+            "out/$TAG-x86_64-unknown-linux-gnu.tar.xz" \
+            "out/$TAG-x86_64-pc-windows-msvc.7z" \
+            --clobber --repo "$GITHUB_REPOSITORY"
