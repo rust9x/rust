@@ -22,16 +22,18 @@ docs = false
 
 extended = true
 tools = [
-    "cargo",
+    # "cargo",
     "clippy",
+    "cargo-clippy",
     "rustdoc",
-    #    "rustfmt",
-    #    "rust-analyzer",
+    "rustfmt",
+    "cargo-fmt",
+    # "rust-analyzer",
     "rust-analyzer-proc-macro-srv",
-    #    "analysis",
+    # "analysis",
     "src",
-    #    "wasm-component-ld",
-    #    "miri", "cargo-miri" # for dev/nightly channels
+    # "wasm-component-ld",
+    # "miri", "cargo-miri" # for dev/nightly channels
 ]
 
 [target.x86_64-pc-windows-gnu]

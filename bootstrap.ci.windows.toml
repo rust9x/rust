@@ -23,8 +23,10 @@ extended = true
 tools = [
     "cargo",
     "clippy",
+    "cargo-clippy",
     "rustdoc",
     "rustfmt",
+    "cargo-fmt",
     # "rust-analyzer",
     "rust-analyzer-proc-macro-srv",
     "analysis",                     # bootstrap fails dist without this (sometimes?)
