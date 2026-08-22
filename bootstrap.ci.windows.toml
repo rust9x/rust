@@ -1,0 +1,51 @@
+# See bootstrap.example.toml for documentation of available options
+#
+change-id = 160100
+
+[llvm]
+# Will download LLVM from CI if available on your platform.
+download-ci-llvm = true
+# NOTE: if you set ↑ to false, disable other LLVM targets to save lots of build time!
+# targets = "X86"
+# experimental-targets = ""
+
+[build]
+build = "x86_64-pc-windows-msvc"
+target = [
+    "x86_64-pc-windows-msvc",
+    "i586-rust9x-windows-msvc",
+    "i686-rust9x-windows-msvc",
+    "x86_64-rust9x-windows-msvc",
+]
+docs = false
+extended = true
+
+tools = [
+    "cargo",
+    "clippy",
+    "rustdoc",
+    "rustfmt",
+    # "rust-analyzer",
+    "rust-analyzer-proc-macro-srv",
+    "analysis",                     # bootstrap fails dist without this (sometimes?)
+    "src",
+    # "wasm-component-ld",
+    # "miri", "cargo-miri" # for dev/nightly channels
+]
+
+[install]
+
+[rust]
+lld = true
+bootstrap-override-lld = "self-contained"
+omit-git-hash = false
+dist-src = false
+channel = "dev"
+incremental = false
+remap-debuginfo = true
+compress-debuginfo = true
+
+[dist]
+compression-formats = ["xz"]
+compression-profile = "fast"
+vendor = false
