@@ -1,0 +1,62 @@
+# See bootstrap.example.toml for documentation of available options
+#
+change-id = 160100
+
+[llvm]
+# Will download LLVM from CI if available on your platform.
+download-ci-llvm = true
+# NOTE: if you set ↑ to false, disable other LLVM targets to save lots of build time!
+# targets = "X86"
+# experimental-targets = ""
+
+# You will need to set up the `LIB` environment variable to point to the MSVC libraries on your
+# system. You will also need to have the libraries in a case-insensitive file system.
+[build]
+build = "x86_64-unknown-linux-gnu"
+target = [
+    # "i486-rust9x-windows-msvc",
+    "i586-rust9x-windows-msvc",
+    "i686-rust9x-windows-msvc",
+    "x86_64-rust9x-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+]
+docs = false
+
+extended = true
+tools = [
+    "cargo",
+    "clippy",
+    "rustdoc",
+    #    "rustfmt",
+    #    "rust-analyzer",
+    "rust-analyzer-proc-macro-srv",
+    #    "analysis",
+    "src",
+    #    "wasm-component-ld",
+    #    "miri", "cargo-miri" # for dev/nightly channels
+]
+
+[target.i486-rust9x-windows-msvc]
+cc = "clang-cl"
+ar = "llvm-lib"
+[target.i586-rust9x-windows-msvc]
+cc = "clang-cl"
+ar = "llvm-lib"
+[target.i686-rust9x-windows-msvc]
+cc = "clang-cl"
+ar = "llvm-lib"
+[target.x86_64-rust9x-windows-msvc]
+cc = "clang-cl"
+ar = "llvm-lib"
+[target.x86_64-pc-windows-msvc]
+cc = "clang-cl"
+ar = "llvm-lib"
+
+[rust]
+# enable rust-lld.exe so we don't need editbin.exe
+lld = true
+bootstrap-override-lld = "self-contained"
+
+# you can override this with -i/--incremental
+# incremental = false
+# incremental = true
