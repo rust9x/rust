@@ -20,6 +20,7 @@ pub fn intervals2dur(intervals: u64) -> Duration {
 
 pub mod perf_counter {
     use super::NANOS_PER_SEC;
+    #[cfg(target_has_atomic = "64")]
     use crate::sync::atomic::{AtomicI64, Ordering};
     use crate::sys::{c, cvt};
     use crate::time::Duration;
@@ -29,6 +30,10 @@ pub mod perf_counter {
         cvt(unsafe { c::QueryPerformanceCounter(&mut qpc_value) }).unwrap();
         qpc_value
     }
+
+    #[rustfmt::skip]
+    cfg_select! {
+        target_has_atomic = "64" => {
 
     pub fn frequency() -> i64 {
         // Either the cached result of `QueryPerformanceFrequency` or `0` for
@@ -59,6 +64,30 @@ pub mod perf_counter {
 
         cache.store(frequency, Ordering::Relaxed);
         frequency
+    }
+
+            }
+        _ => {
+            pub fn frequency() -> i64 {
+                static mut FREQUENCY: i64 = 0;
+                let cached = unsafe { core::ptr::read_volatile(&raw const FREQUENCY) };
+                if cached != 0 {
+                    return cached;
+                }
+                frequency_init(&raw mut FREQUENCY)
+            }
+
+            #[cold]
+            fn frequency_init(cache: *mut i64) -> i64 {
+                let mut frequency = 0;
+                unsafe {
+                    cvt(c::QueryPerformanceFrequency(&mut frequency)).unwrap();
+                    crate::hint::assert_unchecked(frequency != 0);
+                    cache.write_volatile(frequency);
+                }
+                frequency
+            }
+        }
     }
 
     // Per microsoft docs, the margin of error for cross-thread time comparisons
