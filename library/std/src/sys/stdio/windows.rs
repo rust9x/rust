@@ -85,12 +85,12 @@ fn is_console(handle: c::HANDLE) -> bool {
 }
 
 /// Returns true if the attached console's code page is currently UTF-8.
-#[cfg(not(target_vendor = "win7"))]
+#[cfg(not(any(target_vendor = "win7", target_family = "rust9x")))]
 fn is_utf8_console() -> bool {
     unsafe { c::GetConsoleOutputCP() == c::CP_UTF8 }
 }
 
-#[cfg(target_vendor = "win7")]
+#[cfg(any(target_vendor = "win7", target_family = "rust9x"))]
 fn is_utf8_console() -> bool {
     // Windows 7 has a fun "feature" where WriteFile on a console handle will return
     // the number of UTF-16 code units written and not the number of bytes from the input string.
