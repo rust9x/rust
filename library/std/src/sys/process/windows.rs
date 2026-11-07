@@ -1012,8 +1012,19 @@ fn make_envp(maybe_env: Option<BTreeMap<EnvKey, OsString>>) -> io::Result<(*mut 
         }
 
         for (k, v) in env {
-            ensure_no_nuls(k.os_string)?;
-            blk.extend(k.utf16);
+            ensure_no_nuls(&k.os_string)?;
+            cfg_select! {
+                target_family = "rust9x" => {
+                    if c::CompareStringOrdinal::available().is_none() {
+                        blk.extend(k.os_string.encode_wide());
+                    } else {
+                        blk.extend(k.utf16);
+                    }
+                }
+                _ => {
+                    blk.extend(k.utf16);
+                }
+            };
             blk.push('=' as u16);
             blk.extend(ensure_no_nuls(v)?.encode_wide());
             blk.push(0);
