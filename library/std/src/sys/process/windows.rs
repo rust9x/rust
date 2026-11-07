@@ -136,7 +136,7 @@ impl From<OsString> for EnvKey {
             if c::CompareStringOrdinal::available().is_none() {
                 let mut k = k;
                 k.make_ascii_uppercase();
-                return EnvKey { utf16: Vec::new(), os_string: k };
+                return EnvKey { utf16: k.encode_wide().collect(), os_string: k };
             }
         }
 
