@@ -359,16 +359,7 @@ impl Command {
         cmd_str.push(0); // add null terminator
 
         // stolen from the libuv code.
-        #[cfg(not(target_family = "rust9x"))]
         let mut flags = self.flags | c::CREATE_UNICODE_ENVIRONMENT;
-        #[cfg(target_family = "rust9x")]
-        let mut flags = {
-            let mut flags = self.flags;
-            if crate::sys::compat::checks::is_windows_nt() {
-                flags |= c::CREATE_UNICODE_ENVIRONMENT;
-            }
-            flags
-        };
         if self.detach {
             flags |= c::DETACHED_PROCESS | c::CREATE_NEW_PROCESS_GROUP;
         }
