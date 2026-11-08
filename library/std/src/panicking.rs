@@ -20,7 +20,7 @@ use realstd::io::try_set_output_capture;
 use crate::any::Any;
 #[cfg(not(test))]
 use crate::io::try_set_output_capture;
-use crate::mem::{self, ManuallyDrop};
+use crate::mem::{self, ManuallyDrop, MaybeUninit};
 use crate::panic::{BacktraceStyle, PanicHookInfo};
 use crate::sync::atomic::{Atomic, AtomicBool, Ordering};
 use crate::sync::nonpoison::RwLock;
@@ -262,8 +262,9 @@ fn default_hook(info: &PanicHookInfo<'_>) {
 
             // Try to write the panic message to a buffer first to prevent other concurrent outputs
             // interleaving with it.
-            let mut buffer = [0u8; 512];
-            let mut cursor = crate::io::Cursor::new(&mut buffer[..]);
+            let mut buffer = [MaybeUninit::<u8>::uninit(); 512];
+            let mut buffer = crate::io::BorrowedBuf::from(&mut buffer[..]);
+            let mut cursor = buffer.unfilled();
 
             let write_msg = |dst: &mut dyn crate::io::Write| {
                 // We add a newline to ensure the panic message appears at the start of a line.
@@ -271,8 +272,7 @@ fn default_hook(info: &PanicHookInfo<'_>) {
             };
 
             if write_msg(&mut cursor).is_ok() {
-                let pos = cursor.position() as usize;
-                let _ = err.write_all(&buffer[0..pos]);
+                let _ = err.write_all(buffer.filled());
             } else {
                 // The message did not fit into the buffer, write it directly instead.
                 let _ = write_msg(err);
