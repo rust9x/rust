@@ -234,7 +234,8 @@ fn write_valid_utf8_to_console(handle: c::HANDLE, utf8: &str) -> io::Result<usiz
     debug_assert!(!utf8.is_empty());
 
     let mut utf16 = [MaybeUninit::<u16>::uninit(); MAX_BUFFER_SIZE / 2];
-    let utf8 = &utf8[..utf8.floor_char_boundary(utf16.len())];
+    // SAFETY: floor_char_boundary returns the full slice if the index is larger than the string length
+    let utf8 = unsafe { utf8.get_unchecked(..utf8.floor_char_boundary(utf16.len())) };
 
     #[rustfmt::skip]
     let utf16: &[u16] = unsafe {
