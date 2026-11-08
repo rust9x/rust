@@ -136,9 +136,9 @@ impl Iterator for ReadDir {
             }
         }
         unsafe {
-            let mut wfd = mem::zeroed();
+            let mut wfd = MaybeUninit::uninit();
             loop {
-                if c::FindNextFileW(handle.0, &mut wfd) == 0 {
+                if c::FindNextFileW(handle.0, wfd.as_mut_ptr()) == 0 {
                     self.handle = None;
                     match api::get_last_error() {
                         WinError::NO_MORE_FILES => return None,
@@ -147,7 +147,7 @@ impl Iterator for ReadDir {
                         }
                     }
                 }
-                if let Some(e) = DirEntry::new(&self.root, &wfd) {
+                if let Some(e) = DirEntry::new(&self.root, &wfd.assume_init_ref()) {
                     return Some(Ok(e));
                 }
             }
@@ -615,11 +615,12 @@ impl File {
     #[cfg(not(target_vendor = "uwp"))]
     pub fn file_attr(&self) -> io::Result<FileAttr> {
         unsafe {
-            let mut info: c::BY_HANDLE_FILE_INFORMATION = mem::zeroed();
-            cvt(c::GetFileInformationByHandle(self.handle.as_raw_handle(), &mut info))?;
+            let mut info = MaybeUninit::uninit();
+            cvt(c::GetFileInformationByHandle(self.handle.as_raw_handle(), info.as_mut_ptr()))?;
+            let info = info.assume_init_ref();
             let mut reparse_tag = 0;
             if info.dwFileAttributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-                let mut attr_tag: c::FILE_ATTRIBUTE_TAG_INFO = mem::zeroed();
+                let mut attr_tag: MaybeUninit<c::FILE_ATTRIBUTE_TAG_INFO> = MaybeUninit::uninit();
                 // rust9x: If a reparse point attribute is returned, we must be on NT-based Windows
                 // with support for FileAttributeTagInformation, so our
                 // fallback implementation of `GetFileInformationByHandleEx` will work without
@@ -628,9 +629,10 @@ impl File {
                 cvt(c::GetFileInformationByHandleEx(
                     self.handle.as_raw_handle(),
                     c::FileAttributeTagInfo,
-                    (&raw mut attr_tag).cast(),
+                    attr_tag.as_mut_ptr().cast(),
                     mem::size_of::<c::FILE_ATTRIBUTE_TAG_INFO>().try_into().unwrap(),
                 ))?;
+                let attr_tag = attr_tag.assume_init_ref();
                 if attr_tag.FileAttributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0 {
                     reparse_tag = attr_tag.ReparseTag;
                 }
@@ -916,15 +918,15 @@ impl File {
     /// Gets only basic file information such as attributes and file times.
     fn basic_info(&self) -> io::Result<c::FILE_BASIC_INFO> {
         unsafe {
-            let mut info: c::FILE_BASIC_INFO = mem::zeroed();
+            let mut info: MaybeUninit<c::FILE_BASIC_INFO> = MaybeUninit::uninit();
             let size = size_of_val(&info);
             cvt(c::GetFileInformationByHandleEx(
                 self.handle.as_raw_handle(),
                 c::FileBasicInfo,
-                (&raw mut info) as *mut c_void,
+                info.as_mut_ptr().cast(),
                 size as u32,
             ))?;
-            Ok(info)
+            Ok(info.assume_init())
         }
     }
 
@@ -1358,7 +1360,7 @@ pub fn readdir(p: &Path) -> io::Result<ReadDir> {
     let path = maybe_verbatim(&star)?;
 
     unsafe {
-        let mut wfd: c::WIN32_FIND_DATAW = mem::zeroed();
+        let mut wfd: MaybeUninit<c::WIN32_FIND_DATAW> = MaybeUninit::uninit();
         // this is like FindFirstFileW (see https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-findfirstfileexw),
         // but with FindExInfoBasic it should skip filling WIN32_FIND_DATAW.cAlternateFileName
         // (see https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-win32_find_dataw)
@@ -1370,7 +1372,7 @@ pub fn readdir(p: &Path) -> io::Result<ReadDir> {
         let find_handle = c::FindFirstFileExW(
             path.as_ptr(),
             c::FindExInfoBasic,
-            &mut wfd as *mut _ as _,
+            wfd.as_mut_ptr().cast(),
             c::FindExSearchNameMatch,
             ptr::null(),
             0,
@@ -1379,13 +1381,13 @@ pub fn readdir(p: &Path) -> io::Result<ReadDir> {
         // We take the hit of filling in the alternate file name because both `FindFirstFileExW` and
         // `FindExInfoBasic` aren't necessarily supported.
         #[cfg(target_family = "rust9x")]
-        let find_handle = c::FindFirstFileW(path.as_ptr(), &mut wfd);
+        let find_handle = c::FindFirstFileW(path.as_ptr(), wfd.as_mut_ptr());
 
         if find_handle != c::INVALID_HANDLE_VALUE {
             Ok(ReadDir {
                 handle: Some(FindNextFileHandle(find_handle)),
                 root: Arc::new(root),
-                first: Some(wfd),
+                first: Some(wfd.assume_init()),
             })
         } else {
             // The status `ERROR_FILE_NOT_FOUND` is returned by the `FindFirstFileExW` function
@@ -1680,8 +1682,8 @@ fn metadata(path: &WCStr, reparse: ReparsePoint) -> io::Result<FileAttr> {
 
             // Since we don't have access to `FILE_FLAG_BACKUP_SEMANTICS` on 9x/ME, fall back to
             // `FindFirstFile` for directories
-            let mut find_data: c::WIN32_FIND_DATAW = mem::zeroed();
-            let handle = c::FindFirstFileW(path.as_ptr(), &mut find_data);
+            let mut find_data = MaybeUninit::uninit();
+            let handle = c::FindFirstFileW(path.as_ptr(), find_data.as_mut_ptr());
 
             if handle == c::INVALID_HANDLE_VALUE {
                 // You can't get info about the root directory via FindFirstFile, so in that
@@ -1703,7 +1705,7 @@ fn metadata(path: &WCStr, reparse: ReparsePoint) -> io::Result<FileAttr> {
                 });
             }
 
-            let attrs = FileAttr::from(find_data);
+            let attrs = FileAttr::from(find_data.assume_init());
             c::FindClose(handle);
 
             return Ok(attrs);
@@ -1724,7 +1726,7 @@ fn metadata(path: &WCStr, reparse: ReparsePoint) -> io::Result<FileAttr> {
                 // `ERROR_SHARING_VIOLATION` means the file exists (but is locked)
                 // therefore it's safe to assume the file name given does not
                 // include wildcards.
-                let mut wfd: c::WIN32_FIND_DATAW = mem::zeroed();
+                let mut wfd: MaybeUninit<c::WIN32_FIND_DATAW> = MaybeUninit::uninit();
 
                 #[cfg(target_family = "rust9x")]
                 let handle = c::FindFirstFileW(path.as_ptr(), &mut wfd as *mut _ as _);
@@ -1733,7 +1735,7 @@ fn metadata(path: &WCStr, reparse: ReparsePoint) -> io::Result<FileAttr> {
                 let handle = c::FindFirstFileExW(
                     path.as_ptr(),
                     c::FindExInfoBasic,
-                    &mut wfd as *mut _ as _,
+                    wfd.as_mut_ptr().cast(),
                     c::FindExSearchNameMatch,
                     ptr::null(),
                     0,
@@ -1749,7 +1751,7 @@ fn metadata(path: &WCStr, reparse: ReparsePoint) -> io::Result<FileAttr> {
 
                     // `FindFirstFileExW` reads the cached file information from the
                     // directory. The downside is that this metadata may be outdated.
-                    let attrs = FileAttr::from(wfd);
+                    let attrs = FileAttr::from(wfd.assume_init());
                     if reparse == ReparsePoint::Follow && attrs.file_type().is_symlink() {
                         Err(e)
                     } else {
