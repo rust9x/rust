@@ -81,9 +81,14 @@ impl Condvar {
         let event = self.inner.get_or_init(Self::init);
 
         unsafe {
-            cvt(c::SetEvent(event.as_raw_handle())).unwrap();
+            // Display instead of unwrap's Debug: io::Error's Debug impl is large
+            if let Err(e) = cvt(c::SetEvent(event.as_raw_handle())) {
+                panic!("SetEvent failed: {e}");
+            }
             crate::thread::yield_now();
-            cvt(c::ResetEvent(event.as_raw_handle())).unwrap();
+            if let Err(e) = cvt(c::ResetEvent(event.as_raw_handle())) {
+                panic!("ResetEvent failed: {e}");
+            }
         }
     }
 }
